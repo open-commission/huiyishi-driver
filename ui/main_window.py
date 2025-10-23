@@ -9,11 +9,17 @@
 from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QVBoxLayout, QWidget, 
                              QApplication, QStatusBar, QLabel)
 from PyQt6.QtCore import Qt
+from ui.dashboard_widget import DashboardWidget
 from ui.monitor_widget import MonitorWidget
+from ui.alarm_widget import AlarmWidget
+from ui.weather_widget import WeatherWidget
+from ui.farming_widget import FarmingWidget
+from ui.statistics_widget import StatisticsWidget
 from ui.production_widget import ProductionWidget
 from ui.control_widget import ControlWidget
 from controllers.sensor_controller import SensorController, ServoController
 from database.db_manager import DatabaseManager
+from hardware.gpio_controller import GPIOController
 
 
 class MainWindow(QMainWindow):
@@ -27,6 +33,7 @@ class MainWindow(QMainWindow):
         self.sensor_controller = SensorController()
         self.servo_controller = ServoController()
         self.database = DatabaseManager()
+        self.gpio_controller = GPIOController()
         
         # 设置UI
         self.init_ui()
@@ -36,6 +43,10 @@ class MainWindow(QMainWindow):
         
         # 开始传感器监控
         self.sensor_controller.start_monitoring(3000)  # 每3秒更新一次
+        
+        # 连接GPIO控制器
+        self.gpio_controller.set_max_pages(self.tab_widget.count())
+        self.gpio_controller.page_changed.connect(self.on_gpio_page_changed)
         
     def init_ui(self):
         """
@@ -57,12 +68,22 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.tab_widget)
         
         # 创建各个功能页面
-        self.monitor_widget = MonitorWidget()
-        self.production_widget = ProductionWidget()
-        self.control_widget = ControlWidget()
+        self.dashboard_widget = DashboardWidget()    # 主仪表盘
+        self.monitor_widget = MonitorWidget()        # 环境监测
+        self.alarm_widget = AlarmWidget()            # 报警监控
+        self.weather_widget = WeatherWidget()        # 天气预报
+        self.farming_widget = FarmingWidget()        # 农事指导
+        self.statistics_widget = StatisticsWidget()  # 统计分析
+        self.production_widget = ProductionWidget()  # 生产溯源
+        self.control_widget = ControlWidget()        # 设备控制
         
         # 添加页面到标签页控件
+        self.tab_widget.addTab(self.dashboard_widget, "主仪表盘")
         self.tab_widget.addTab(self.monitor_widget, "环境监测")
+        self.tab_widget.addTab(self.alarm_widget, "报警监控")
+        self.tab_widget.addTab(self.weather_widget, "天气预报")
+        self.tab_widget.addTab(self.farming_widget, "农事指导")
+        self.tab_widget.addTab(self.statistics_widget, "统计分析")
         self.tab_widget.addTab(self.production_widget, "生产溯源")
         self.tab_widget.addTab(self.control_widget, "设备控制")
         
@@ -129,3 +150,20 @@ class MainWindow(QMainWindow):
         处理生产数据更新
         """
         self.status_label.setText("生产记录已更新")
+        
+    def on_gpio_page_changed(self, page_index):
+        """
+        处理GPIO页面切换请求
+        
+        Args:
+            page_index: 页面索引
+        """
+        self.tab_widget.setCurrentIndex(page_index)
+        
+    def closeEvent(self, event):
+        """
+        窗口关闭事件处理
+        """
+        # 清理GPIO资源
+        self.gpio_controller.cleanup()
+        event.accept()
