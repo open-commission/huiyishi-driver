@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+主窗口界面
+包含环境监测、生产溯源和控制界面三个主要部分
+"""
+
+from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QVBoxLayout, QWidget, 
+                             QApplication, QStatusBar, QLabel)
+from PyQt6.QtCore import Qt
+from ui.monitor_widget import MonitorWidget
+from ui.production_widget import ProductionWidget
+from ui.control_widget import ControlWidget
+from controllers.sensor_controller import SensorController, ServoController
+from database.db_manager import DatabaseManager
+
+
+class MainWindow(QMainWindow):
+    """
+    主窗口类
+    """
+    def __init__(self):
+        super().__init__()
+        
+        # 初始化控制器和数据模型
+        self.sensor_controller = SensorController()
+        self.servo_controller = ServoController()
+        self.database = DatabaseManager()
+        
+        # 设置UI
+        self.init_ui()
+        
+        # 连接信号和槽
+        self.connect_signals()
+        
+        # 开始传感器监控
+        self.sensor_controller.start_monitoring(3000)  # 每3秒更新一次
+        
+    def init_ui(self):
+        """
+        初始化用户界面
+        """
+        self.setWindowTitle("秋月梨种植环境监测与生产溯源管理系统")
+        # 设置窗口为全屏
+        self.showFullScreen()
+        
+        # 创建中央部件
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        
+        # 创建主布局
+        main_layout = QVBoxLayout(central_widget)
+        
+        # 创建标签页控件
+        self.tab_widget = QTabWidget()
+        main_layout.addWidget(self.tab_widget)
+        
+        # 创建各个功能页面
+        self.monitor_widget = MonitorWidget()
+        self.production_widget = ProductionWidget()
+        self.control_widget = ControlWidget()
+        
+        # 添加页面到标签页控件
+        self.tab_widget.addTab(self.monitor_widget, "环境监测")
+        self.tab_widget.addTab(self.production_widget, "生产溯源")
+        self.tab_widget.addTab(self.control_widget, "设备控制")
+        
+        # 创建状态栏
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
+        
+        # 添加状态栏标签
+        self.status_label = QLabel("系统就绪")
+        self.status_bar.addWidget(self.status_label)
+        
+    def connect_signals(self):
+        """
+        连接信号和槽
+        """
+        # 连接传感器数据更新信号
+        self.sensor_controller.data_updated.connect(self.on_sensor_data_updated)
+        
+        # 连接舵机状态变化信号
+        self.servo_controller.status_changed.connect(self.on_servo_status_changed)
+        
+        # 连接控制界面的信号
+        self.control_widget.servo_toggle_requested.connect(self.on_servo_toggle_requested)
+        
+        # 连接生产溯源界面的信号
+        self.production_widget.data_updated.connect(self.on_production_data_updated)
+        
+    def on_sensor_data_updated(self, env_data):
+        """
+        处理传感器数据更新
+        
+        Args:
+            env_data: EnvironmentData对象
+        """
+        # 更新状态栏
+        self.status_label.setText(f"环境数据更新: 温度 {env_data.temperature}°C, "
+                                 f"湿度 {env_data.humidity}%, "
+                                 f"光照 {env_data.light}lux, "
+                                 f"土壤湿度 {env_data.soil_moisture}%")
+    
+    def on_servo_status_changed(self, is_active):
+        """
+        处理舵机状态变化
+        
+        Args:
+            is_active: 舵机是否激活
+        """
+        # 更新控制界面
+        self.control_widget.update_servo_status(is_active)
+        
+        # 更新状态栏
+        status_text = "舵机已开启" if is_active else "舵机已关闭"
+        self.status_label.setText(status_text)
+    
+    def on_servo_toggle_requested(self):
+        """
+        处理舵机开关请求
+        """
+        # 切换舵机状态
+        self.servo_controller.toggle_servo()
+    
+    def on_production_data_updated(self):
+        """
+        处理生产数据更新
+        """
+        self.status_label.setText("生产记录已更新")
