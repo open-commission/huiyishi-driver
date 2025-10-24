@@ -15,7 +15,6 @@ from PyQt6.QtGui import QFont, QColor
 from ui.chart_widget import ChartWidget
 from ui.bar_chart_widget import BarChartWidget
 from models.environment_model import EnvironmentData
-from controllers.sensor_controller import SensorController
 
 
 class DataDisplayWidget(QFrame):
@@ -76,16 +75,9 @@ class MonitorWidget(QWidget):
     """
     def __init__(self):
         super().__init__()
-        self.sensor_controller = SensorController()
         self.history_data = []
         self.init_ui()
         self.init_timer()
-        
-        # 开始传感器监控
-        self.sensor_controller.start_monitoring(3000)  # 每3秒更新一次
-        
-        # 连接传感器数据更新信号
-        self.sensor_controller.data_updated.connect(self.on_sensor_data_updated)
         
         # 加载历史数据
         self.load_history_data()
@@ -137,37 +129,13 @@ class MonitorWidget(QWidget):
         
         layout.addWidget(self.chart_tabs)
         
-        # 创建历史数据按钮
-        button_layout = QHBoxLayout()
-        self.refresh_button = QPushButton("刷新历史数据")
-        self.refresh_button.clicked.connect(self.load_history_data)
-        button_layout.addWidget(self.refresh_button)
-        button_layout.addStretch()
-        layout.addLayout(button_layout)
-        
-        # 创建历史数据表格
-        history_group = QGroupBox("历史数据")
-        history_layout = QVBoxLayout(history_group)
-        
-        self.history_table = QTableWidget()
-        self.history_table.setColumnCount(5)
-        self.history_table.setHorizontalHeaderLabels(["时间", "温度(°C)", "湿度(%)", "光照(lux)", "土壤湿度(%)"])
-        
-        # 设置表格属性
-        self.history_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.history_table.verticalHeader().setVisible(False)
-        self.history_table.setAlternatingRowColors(True)
-        self.history_table.setMaximumHeight(150)
-        
-        history_layout.addWidget(self.history_table)
-        layout.addWidget(history_group)
-        
         # 设置初始大小比例
         layout.setStretch(0, 0)  # 标题
         layout.setStretch(1, 1)  # 数据网格
         layout.setStretch(2, 3)  # 图表标签页
-        layout.setStretch(3, 0)  # 按钮
-        layout.setStretch(4, 0)  # 历史数据表格
+        
+        # 添加伸缩因子以填满窗口
+        layout.addStretch(1)
         
     def init_timer(self):
         """
@@ -200,48 +168,15 @@ class MonitorWidget(QWidget):
         """
         加载历史数据
         """
-        # 从传感器控制器获取历史数据
-        self.history_data = self.sensor_controller.get_history_data(50)
+        # 注意：这里需要主窗口传递历史数据
+        pass
         
-        # 更新折线图（如果还没有数据点）
-        if not self.line_chart_widget.data_history:
-            for data in self.history_data:
-                self.line_chart_widget.add_data_point(data)
-        
-        # 更新历史数据表格
-        self.update_history_table()
-        
-    def update_history_table(self):
+    def update_history_table(self, history_data):
         """
         更新历史数据表格
+        
+        Args:
+            history_data: 历史数据列表
         """
-        # 清空表格
-        self.history_table.setRowCount(0)
-        
-        # 添加历史数据到表格
-        self.history_table.setRowCount(len(self.history_data))
-        
-        for row, data in enumerate(self.history_data):
-            # 时间
-            time_item = QTableWidgetItem(data.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
-            self.history_table.setItem(row, 0, time_item)
-            
-            # 温度
-            temp_item = QTableWidgetItem(f"{data.temperature:.2f}")
-            self.history_table.setItem(row, 1, temp_item)
-            
-            # 湿度
-            humidity_item = QTableWidgetItem(f"{data.humidity:.2f}")
-            self.history_table.setItem(row, 2, humidity_item)
-            
-            # 光照
-            light_item = QTableWidgetItem(f"{data.light:.2f}")
-            self.history_table.setItem(row, 3, light_item)
-            
-            # 土壤湿度
-            soil_item = QTableWidgetItem(f"{data.soil_moisture:.2f}")
-            self.history_table.setItem(row, 4, soil_item)
-            
-        # 如果有数据，滚动到最后一行
-        if self.history_data:
-            self.history_table.scrollToBottom()
+        # 此方法在拆分后的页面中不再使用
+        pass

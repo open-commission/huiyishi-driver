@@ -13,7 +13,6 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
 from PyQt6.QtCore import Qt, QTimer, QDateTime
 from PyQt6.QtGui import QFont, QColor, QPalette
 from models.environment_model import EnvironmentData
-from controllers.sensor_controller import SensorController
 
 
 class AlarmItemWidget(QFrame):
@@ -58,13 +57,20 @@ class AlarmWidget(QWidget):
     """
     def __init__(self):
         super().__init__()
-        self.sensor_controller = SensorController()
         self.alarm_history = []  # 报警历史记录
         self.active_alarms = {}  # 当前活动报警
-        self.init_ui()
         
-        # 连接传感器数据更新信号
-        self.sensor_controller.data_updated.connect(self.check_alarms)
+        # 报警阈值配置
+        self.temp_min = 10
+        self.temp_max = 35
+        self.humidity_min = 40
+        self.humidity_max = 80
+        self.light_min = 5000
+        self.light_max = 50000
+        self.soil_moisture_min = 30
+        self.soil_moisture_max = 80
+        
+        self.init_ui()
         
         # 模拟一些初始报警
         self.simulate_initial_alarms()
@@ -132,6 +138,42 @@ class AlarmWidget(QWidget):
         
         layout.addLayout(button_layout)
         
+        # 添加伸缩因子以填满窗口
+        layout.addStretch(1)
+        
+    def update_alarm_thresholds(self, temp_min, temp_max, humidity_min, humidity_max,
+                               light_min, light_max, soil_min, soil_max):
+        """
+        更新报警阈值配置
+        
+        Args:
+            temp_min: 温度最小值
+            temp_max: 温度最大值
+            humidity_min: 湿度最小值
+            humidity_max: 湿度最大值
+            light_min: 光照最小值
+            light_max: 光照最大值
+            soil_min: 土壤湿度最小值
+            soil_max: 土壤湿度最大值
+        """
+        self.temp_min = temp_min
+        self.temp_max = temp_max
+        self.humidity_min = humidity_min
+        self.humidity_max = humidity_max
+        self.light_min = light_min
+        self.light_max = light_max
+        self.soil_moisture_min = soil_min
+        self.soil_moisture_max = soil_max
+        
+    def on_sensor_data_updated(self, env_data: EnvironmentData):
+        """
+        处理传感器数据更新并检查报警
+        
+        Args:
+            env_data: EnvironmentData对象
+        """
+        self.check_alarms(env_data)
+        
     def check_alarms(self, env_data: EnvironmentData):
         """
         检查环境数据并生成报警
@@ -140,35 +182,34 @@ class AlarmWidget(QWidget):
             env_data: EnvironmentData对象
         """
         # 检查温度报警
-        if env_data.temperature < 10:
-            self.add_alarm("温度过低", f"当前温度 {env_data.temperature}°C < 10°C")
-        elif env_data.temperature > 35:
-            self.add_alarm("温度过高", f"当前温度 {env_data.temperature}°C > 35°C")
+        if env_data.temperature < self.temp_min:
+            self.add_alarm("温度过低", f"当前温度 {env_data.temperature}°C < {self.temp_min}°C")
+        elif env_data.temperature > self.temp_max:
+            self.add_alarm("温度过高", f"当前温度 {env_data.temperature}°C > {self.temp_max}°C")
         else:
             self.clear_alarm("温度")
             
         # 检查湿度报警
-        if env_data.humidity < 40:
-            self.add_alarm("湿度过低", f"当前湿度 {env_data.humidity}% < 40%")
-        elif env_data.humidity > 80:
-            self.add_alarm("湿度过高", f"当前湿度 {env_data.humidity}% > 80%")
+        if env_data.humidity < self.humidity_min:
+            self.add_alarm("湿度过低", f"当前湿度 {env_data.humidity}% < {self.humidity_min}%")
+        elif env_data.humidity > self.humidity_max:
+            self.add_alarm("湿度过高", f"当前湿度 {env_data.humidity}% > {self.humidity_max}%")
         else:
             self.clear_alarm("湿度")
             
         # 检查光照报警
-        light_klux = env_data.light / 1000
-        if light_klux < 5:
-            self.add_alarm("光照不足", f"当前光照 {light_klux}k lux < 5k lux")
-        elif light_klux > 50:
-            self.add_alarm("光照过强", f"当前光照 {light_klux}k lux > 50k lux")
+        if env_data.light < self.light_min:
+            self.add_alarm("光照不足", f"当前光照 {env_data.light}lux < {self.light_min}lux")
+        elif env_data.light > self.light_max:
+            self.add_alarm("光照过强", f"当前光照 {env_data.light}lux > {self.light_max}lux")
         else:
             self.clear_alarm("光照")
             
         # 检查土壤湿度报警
-        if env_data.soil_moisture < 30:
-            self.add_alarm("土壤过干", f"当前土壤湿度 {env_data.soil_moisture}% < 30%")
-        elif env_data.soil_moisture > 80:
-            self.add_alarm("土壤过湿", f"当前土壤湿度 {env_data.soil_moisture}% > 80%")
+        if env_data.soil_moisture < self.soil_moisture_min:
+            self.add_alarm("土壤过干", f"当前土壤湿度 {env_data.soil_moisture}% < {self.soil_moisture_min}%")
+        elif env_data.soil_moisture > self.soil_moisture_max:
+            self.add_alarm("土壤过湿", f"当前土壤湿度 {env_data.soil_moisture}% > {self.soil_moisture_max}%")
         else:
             self.clear_alarm("土壤湿度")
             

@@ -233,6 +233,9 @@ class DashboardWidget(QWidget):
         # 更新时间显示
         self.update_time_display()
         
+        # 添加伸缩因子以填满窗口
+        layout.addStretch(1)
+        
     def init_timer(self):
         """
         初始化定时器

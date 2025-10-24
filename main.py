@@ -39,7 +39,7 @@ def main():
     
     # 创建主窗口
     window = MainWindow()
-    window.show()
+    # 注意：全屏设置已在MainWindow的__init__方法中通过showFullScreen()完成
     
     exit_code = app.exec()
     
