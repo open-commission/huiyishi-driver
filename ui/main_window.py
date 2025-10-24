@@ -15,11 +15,10 @@ from ui.alarm_widget import AlarmWidget
 from ui.weather_widget import WeatherWidget
 from ui.farming_widget import FarmingWidget
 from ui.statistics_widget import StatisticsWidget
-from ui.production_widget import ProductionWidget
-from ui.control_widget import ControlWidget
 from controllers.sensor_controller import SensorController, ServoController
 from database.db_manager import DatabaseManager
 from hardware.gpio_controller import GPIOController
+from models.environment_model import EnvironmentData
 
 
 class MainWindow(QMainWindow):
@@ -74,18 +73,15 @@ class MainWindow(QMainWindow):
         self.weather_widget = WeatherWidget()        # 天气预报
         self.farming_widget = FarmingWidget()        # 农事指导
         self.statistics_widget = StatisticsWidget()  # 统计分析
-        self.production_widget = ProductionWidget()  # 生产溯源
-        self.control_widget = ControlWidget()        # 设备控制
+        # 移除生产溯源和设备控制界面
         
-        # 添加页面到标签页控件
+        # 添加页面到标签页控件（只保留不需要输入的界面）
         self.tab_widget.addTab(self.dashboard_widget, "主仪表盘")
         self.tab_widget.addTab(self.monitor_widget, "环境监测")
         self.tab_widget.addTab(self.alarm_widget, "报警监控")
         self.tab_widget.addTab(self.weather_widget, "天气预报")
         self.tab_widget.addTab(self.farming_widget, "农事指导")
         self.tab_widget.addTab(self.statistics_widget, "统计分析")
-        self.tab_widget.addTab(self.production_widget, "生产溯源")
-        self.tab_widget.addTab(self.control_widget, "设备控制")
         
         # 创建状态栏
         self.status_bar = QStatusBar()
@@ -105,13 +101,7 @@ class MainWindow(QMainWindow):
         # 连接舵机状态变化信号
         self.servo_controller.status_changed.connect(self.on_servo_status_changed)
         
-        # 连接控制界面的信号
-        self.control_widget.servo_toggle_requested.connect(self.on_servo_toggle_requested)
-        
-        # 连接生产溯源界面的信号
-        self.production_widget.data_updated.connect(self.on_production_data_updated)
-        
-    def on_sensor_data_updated(self, env_data):
+    def on_sensor_data_updated(self, env_data: EnvironmentData):
         """
         处理传感器数据更新
         
@@ -123,6 +113,9 @@ class MainWindow(QMainWindow):
                                  f"湿度 {env_data.humidity}%, "
                                  f"光照 {env_data.light}lux, "
                                  f"土壤湿度 {env_data.soil_moisture}%")
+        
+        # 更新仪表盘数据
+        self.dashboard_widget.on_sensor_data_updated(env_data)
     
     def on_servo_status_changed(self, is_active):
         """
@@ -131,25 +124,9 @@ class MainWindow(QMainWindow):
         Args:
             is_active: 舵机是否激活
         """
-        # 更新控制界面
-        self.control_widget.update_servo_status(is_active)
-        
         # 更新状态栏
         status_text = "舵机已开启" if is_active else "舵机已关闭"
         self.status_label.setText(status_text)
-    
-    def on_servo_toggle_requested(self):
-        """
-        处理舵机开关请求
-        """
-        # 切换舵机状态
-        self.servo_controller.toggle_servo()
-    
-    def on_production_data_updated(self):
-        """
-        处理生产数据更新
-        """
-        self.status_label.setText("生产记录已更新")
         
     def on_gpio_page_changed(self, page_index):
         """

@@ -12,7 +12,6 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QFont, QColor, QPalette
 from models.environment_model import EnvironmentData
-from controllers.sensor_controller import SensorController
 
 
 class DashboardValueWidget(QFrame):
@@ -124,12 +123,8 @@ class DashboardWidget(QWidget):
     """
     def __init__(self):
         super().__init__()
-        self.sensor_controller = SensorController()
         self.init_ui()
         self.init_timer()
-        
-        # 连接传感器数据更新信号
-        self.sensor_controller.data_updated.connect(self.on_sensor_data_updated)
         
     def init_ui(self):
         """
