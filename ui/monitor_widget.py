@@ -9,7 +9,7 @@
 import sys
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, 
                              QLabel, QFrame, QApplication, QPushButton, QTableWidget,
-                             QTableWidgetItem, QHeaderView, QGroupBox, QTabWidget)
+                             QTableWidgetItem, QHeaderView, QGroupBox, QTabWidget, QSizePolicy)
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QFont, QColor
 from ui.chart_widget import ChartWidget
@@ -75,6 +75,7 @@ class MonitorWidget(QWidget):
     """
     def __init__(self):
         super().__init__()
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.history_data = []
         self.init_ui()
         self.init_timer()

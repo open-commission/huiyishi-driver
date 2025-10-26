@@ -9,7 +9,7 @@
 import sys
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
                              QLabel, QFrame, QApplication, QPushButton, QListWidget,
-                             QListWidgetItem)
+                             QListWidgetItem, QSizePolicy)
 from PyQt6.QtCore import Qt, QDateTime, QTimer
 from PyQt6.QtGui import QFont, QColor
 
@@ -20,6 +20,7 @@ class VentilationWidget(QWidget):
     """
     def __init__(self):
         super().__init__()
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.ventilation_status = False  # False表示关闭，True表示开启
         self.operation_history = []  # 操作历史记录
         self.init_ui()

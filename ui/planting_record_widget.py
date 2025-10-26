@@ -8,8 +8,8 @@
 
 import sys
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                             QLabel, QFrame, QApplication, QPushButton, QTextEdit,
-                             QCalendarWidget, QListWidget, QListWidgetItem)
+                             QLabel, QFrame, QApplication, QPushButton,
+                             QCalendarWidget, QListWidget, QListWidgetItem, QSizePolicy)
 from PyQt6.QtCore import Qt, QDate, QTimer
 from PyQt6.QtGui import QFont, QColor
 
@@ -20,6 +20,7 @@ class PlantingRecordWidget(QWidget):
     """
     def __init__(self):
         super().__init__()
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.records = {}  # 存储每日记录
         self.current_date = QDate.currentDate()
         self.init_ui()
@@ -35,7 +36,7 @@ class PlantingRecordWidget(QWidget):
         # 标题
         title_label = QLabel("种植记录")
         font = QFont()
-        font.setPointSize(24)
+        font.setPointSize(18)
         font.setBold(True)
         title_label.setFont(font)
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -50,7 +51,7 @@ class PlantingRecordWidget(QWidget):
         # 日期显示
         self.date_label = QLabel(self.current_date.toString("yyyy年MM月dd日"))
         font = QFont()
-        font.setPointSize(16)
+        font.setPointSize(14)
         font.setBold(True)
         self.date_label.setFont(font)
         self.date_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -63,32 +64,50 @@ class PlantingRecordWidget(QWidget):
         
         record_title = QLabel("当日记录")
         font = QFont()
-        font.setPointSize(14)
+        font.setPointSize(12)
         font.setBold(True)
         record_title.setFont(font)
         record_layout.addWidget(record_title)
         
-        # 记录文本框
-        self.record_text = QTextEdit()
-        self.record_text.setPlaceholderText("请输入当日种植效果记录...")
-        self.record_text.setMaximumHeight(100)
-        record_layout.addWidget(self.record_text)
+        # 预定义状态按钮
+        status_layout = QGridLayout()
+        statuses = [
+            "生长良好", "生长缓慢", "叶片发黄", "果实膨大", 
+            "开花期", "结果期", "休眠期", "采收期"
+        ]
+        
+        self.status_buttons = []
+        for i, status in enumerate(statuses):
+            button = QPushButton(status)
+            button.setCheckable(True)
+            button.clicked.connect(lambda checked, s=status: self.select_status(s))
+            status_layout.addWidget(button, i // 4, i % 4)
+            self.status_buttons.append(button)
+        
+        record_layout.addLayout(status_layout)
         
         # 异常情况选择
-        anomaly_layout = QHBoxLayout()
-        anomaly_layout.addWidget(QLabel("异常情况:"))
+        anomaly_title = QLabel("异常情况:")
+        anomaly_title.setFont(QFont("", 12, QFont.Weight.Bold))
+        record_layout.addWidget(anomaly_title)
+        
+        anomaly_layout = QGridLayout()
+        anomalies = [
+            "无异常", "虫灾", "水灾", "温度过高", 
+            "温度过低", "干旱", "病害", "营养不足",
+            "霜冻", "风灾", "药害", "肥害"
+        ]
         
         self.anomaly_buttons = []
-        anomalies = ["无异常", "虫灾", "水灾", "温度过高", "温度过低", "干旱", "病害"]
-        self.selected_anomaly = "无异常"
+        self.selected_anomalies = set()
         
-        for anomaly in anomalies:
+        for i, anomaly in enumerate(anomalies):
             button = QPushButton(anomaly)
             button.setCheckable(True)
             if anomaly == "无异常":
                 button.setChecked(True)
-            button.clicked.connect(lambda checked, a=anomaly: self.select_anomaly(a))
-            anomaly_layout.addWidget(button)
+            button.clicked.connect(lambda checked, a=anomaly: self.toggle_anomaly(a))
+            anomaly_layout.addWidget(button, i // 4, i % 4)
             self.anomaly_buttons.append(button)
             
         record_layout.addLayout(anomaly_layout)
@@ -107,7 +126,7 @@ class PlantingRecordWidget(QWidget):
         
         history_title = QLabel("历史记录")
         font = QFont()
-        font.setPointSize(14)
+        font.setPointSize(12)
         font.setBold(True)
         history_title.setFont(font)
         history_layout.addWidget(history_title)
@@ -117,13 +136,12 @@ class PlantingRecordWidget(QWidget):
         
         layout.addWidget(history_group)
         
-        # 添加伸缩因子以填满窗口
-        layout.addStretch(1)
-        
-        # 创建定时器用于按钮文本恢复
-        self.button_timer = QTimer()
-        self.button_timer.setSingleShot(True)
-        self.button_timer.timeout.connect(self.reset_save_button_text)
+        # 设置布局权重
+        layout.setStretch(0, 0)  # 标题
+        layout.setStretch(1, 0)  # 日历
+        layout.setStretch(2, 0)  # 日期
+        layout.setStretch(3, 1)  # 记录区域
+        layout.setStretch(4, 1)  # 历史记录区域
         
     def on_date_selected(self, date):
         """
@@ -135,40 +153,107 @@ class PlantingRecordWidget(QWidget):
         self.current_date = date
         self.date_label.setText(date.toString("yyyy年MM月dd日"))
         
+        # 重置所有按钮状态
+        for button in self.status_buttons:
+            button.setChecked(False)
+        for button in self.anomaly_buttons:
+            button.setChecked(False)
+            
         # 加载选中日期的记录
         date_key = date.toString("yyyy-MM-dd")
         if date_key in self.records:
             record_data = self.records[date_key]
-            self.record_text.setPlainText(record_data["record"])
-            self.select_anomaly(record_data["anomaly"])
+            # 恢复状态选择
+            if "status" in record_data:
+                for button in self.status_buttons:
+                    if button.text() == record_data["status"]:
+                        button.setChecked(True)
+            # 恢复异常情况选择
+            if "anomalies" in record_data:
+                self.selected_anomalies = set(record_data["anomalies"])
+                for button in self.anomaly_buttons:
+                    if button.text() in self.selected_anomalies:
+                        button.setChecked(True)
         else:
-            self.record_text.clear()
-            self.select_anomaly("无异常")
+            # 默认选择"无异常"
+            for button in self.anomaly_buttons:
+                if button.text() == "无异常":
+                    button.setChecked(True)
+                    break
             
-    def select_anomaly(self, anomaly):
+    def select_status(self, status):
         """
-        选择异常情况
+        选择生长状态
+        
+        Args:
+            status: 生长状态
+        """
+        # 取消其他状态按钮的选中状态
+        for button in self.status_buttons:
+            if button.text() != status:
+                button.setChecked(False)
+                
+    def toggle_anomaly(self, anomaly):
+        """
+        切换异常情况选择
         
         Args:
             anomaly: 异常情况
         """
-        self.selected_anomaly = anomaly
-        # 更新按钮状态
-        for button in self.anomaly_buttons:
-            if button.text() == anomaly:
-                button.setChecked(True)
+        button = None
+        for btn in self.anomaly_buttons:
+            if btn.text() == anomaly:
+                button = btn
+                break
+                
+        if anomaly == "无异常":
+            # 如果选择了"无异常"，则取消其他所有异常选择
+            if button.isChecked():
+                self.selected_anomalies.clear()
+                for btn in self.anomaly_buttons:
+                    if btn.text() != "无异常":
+                        btn.setChecked(False)
+                self.selected_anomalies.add("无异常")
             else:
-                button.setChecked(False)
+                # 如果取消"无异常"选择，确保至少有一个其他异常被选中或清除所有选择
+                button.setChecked(True)
+        else:
+            # 处理其他异常情况
+            if button.isChecked():
+                self.selected_anomalies.discard("无异常")
+                for btn in self.anomaly_buttons:
+                    if btn.text() == "无异常":
+                        btn.setChecked(False)
+                        break
+                self.selected_anomalies.add(anomaly)
+            else:
+                self.selected_anomalies.discard(anomaly)
+                # 如果没有选择任何异常，默认选择"无异常"
+                if not self.selected_anomalies:
+                    for btn in self.anomaly_buttons:
+                        if btn.text() == "无异常":
+                            btn.setChecked(True)
+                            self.selected_anomalies.add("无异常")
+                            break
                 
     def save_record(self):
         """
         保存记录
         """
         date_key = self.current_date.toString("yyyy-MM-dd")
+        
+        # 获取选中的状态
+        selected_status = None
+        for button in self.status_buttons:
+            if button.isChecked():
+                selected_status = button.text()
+                break
+                
+        # 构建记录数据
         record_data = {
             "date": self.current_date.toString("yyyy年MM月dd日"),
-            "record": self.record_text.toPlainText(),
-            "anomaly": self.selected_anomaly
+            "status": selected_status,
+            "anomalies": list(self.selected_anomalies)
         }
         self.records[date_key] = record_data
         
@@ -177,13 +262,10 @@ class PlantingRecordWidget(QWidget):
         
         # 显示保存成功提示
         self.save_button.setText("保存成功")
-        self.button_timer.start(1000)  # 1秒后恢复按钮文本
-        
-    def reset_save_button_text(self):
-        """
-        恢复保存按钮的文本
-        """
-        self.save_button.setText("保存记录")
+        self.button_timer = QTimer()
+        self.button_timer.setSingleShot(True)
+        self.button_timer.timeout.connect(lambda: self.save_button.setText("保存记录"))
+        self.button_timer.start(1000)
         
     def update_history_display(self):
         """
@@ -193,12 +275,13 @@ class PlantingRecordWidget(QWidget):
         # 按日期倒序显示
         for date_key in sorted(self.records.keys(), reverse=True):
             record_data = self.records[date_key]
-            item_text = f"{record_data['date']} - {record_data['anomaly']}"
-            if record_data['record']:
-                item_text += f"\n{record_data['record'][:30]}..." if len(record_data['record']) > 30 else f"\n{record_data['record']}"
+            status_text = record_data.get("status", "未记录")
+            anomalies_text = ", ".join(record_data.get("anomalies", ["无异常"]))
+            
+            item_text = f"{record_data['date']}\n状态: {status_text} | 异常: {anomalies_text}"
                 
             item = QListWidgetItem(item_text)
-            if record_data['anomaly'] != "无异常":
+            if "无异常" not in record_data.get("anomalies", []) or record_data.get("anomalies") != ["无异常"]:
                 item.setForeground(QColor("red"))
             self.history_list.addItem(item)
             
@@ -214,18 +297,18 @@ class PlantingRecordWidget(QWidget):
         self.records = {
             today.toString("yyyy-MM-dd"): {
                 "date": today.toString("yyyy年MM月dd日"),
-                "record": "今日进行浇水和施肥，植株生长状态良好。",
-                "anomaly": "无异常"
+                "status": "生长良好",
+                "anomalies": ["无异常"]
             },
             yesterday.toString("yyyy-MM-dd"): {
                 "date": yesterday.toString("yyyy年MM月dd日"),
-                "record": "发现少量虫害，已进行局部杀虫处理。",
-                "anomaly": "虫灾"
+                "status": "开花期",
+                "anomalies": ["虫灾"]
             },
             last_week.toString("yyyy-MM-dd"): {
                 "date": last_week.toString("yyyy年MM月dd日"),
-                "record": "连续高温，增加浇水频率。",
-                "anomaly": "温度过高"
+                "status": "果实膨大",
+                "anomalies": ["温度过高"]
             }
         }
         

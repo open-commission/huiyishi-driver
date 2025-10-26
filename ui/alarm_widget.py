@@ -9,7 +9,7 @@
 import sys
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, 
                              QLabel, QFrame, QApplication, QPushButton, QListWidget,
-                             QListWidgetItem)
+                             QListWidgetItem, QSizePolicy)
 from PyQt6.QtCore import Qt, QTimer, QDateTime
 from PyQt6.QtGui import QFont, QColor, QPalette
 from models.environment_model import EnvironmentData
@@ -57,6 +57,7 @@ class AlarmWidget(QWidget):
     """
     def __init__(self):
         super().__init__()
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.alarm_history = []  # 报警历史记录
         self.active_alarms = {}  # 当前活动报警
         
@@ -149,7 +150,7 @@ class AlarmWidget(QWidget):
         Args:
             temp_min: 温度最小值
             temp_max: 温度最大值
-            humidity_min: 湿度最小值
+            humidity_min: 湡度最小值
             humidity_max: 湿度最大值
             light_min: 光照最小值
             light_max: 光照最大值

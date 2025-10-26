@@ -8,7 +8,7 @@
 
 import sys
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, 
-                             QLabel, QFrame, QApplication, QProgressBar)
+                             QLabel, QFrame, QApplication, QProgressBar, QSizePolicy)
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QFont, QColor, QPalette
 from models.environment_model import EnvironmentData
@@ -123,6 +123,7 @@ class DashboardWidget(QWidget):
     """
     def __init__(self):
         super().__init__()
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.init_ui()
         self.init_timer()
         

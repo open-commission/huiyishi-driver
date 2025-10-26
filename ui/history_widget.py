@@ -9,7 +9,7 @@
 import sys
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, 
                              QLabel, QFrame, QApplication, QPushButton, QTableWidget,
-                             QTableWidgetItem, QHeaderView, QGroupBox)
+                             QTableWidgetItem, QHeaderView, QGroupBox, QSizePolicy)
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QFont, QColor
 from models.environment_model import EnvironmentData
@@ -21,6 +21,7 @@ class HistoryWidget(QWidget):
     """
     def __init__(self):
         super().__init__()
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.history_data = []
         self.init_ui()
         
@@ -51,6 +52,7 @@ class HistoryWidget(QWidget):
         # 创建历史数据表格
         history_group = QGroupBox("历史数据记录")
         history_layout = QVBoxLayout(history_group)
+        history_layout.setContentsMargins(5, 5, 5, 5)
         
         self.history_table = QTableWidget()
         self.history_table.setColumnCount(5)
@@ -60,13 +62,14 @@ class HistoryWidget(QWidget):
         self.history_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.history_table.verticalHeader().setVisible(False)
         self.history_table.setAlternatingRowColors(True)
-        self.history_table.setMinimumHeight(300)
         
         history_layout.addWidget(self.history_table)
         layout.addWidget(history_group)
         
-        # 添加伸缩因子以填满窗口
-        layout.addStretch(1)
+        # 设置布局权重，让表格占据更多空间
+        layout.setStretch(0, 0)  # 标题
+        layout.setStretch(1, 0)  # 按钮
+        layout.setStretch(2, 1)  # 表格区域
         
     def load_history_data(self):
         """

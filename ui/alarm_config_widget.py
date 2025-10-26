@@ -8,7 +8,7 @@
 
 import sys
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                             QLabel, QFrame, QApplication, QPushButton)
+                             QLabel, QFrame, QApplication, QPushButton, QSizePolicy)
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 from PyQt6.QtGui import QFont
 
@@ -37,9 +37,9 @@ class ValueSelector(QWidget):
         
         # 增加按钮
         self.up_button = QPushButton("▲")
-        self.up_button.setFixedHeight(40)
+        self.up_button.setFixedHeight(30)
         font = QFont()
-        font.setPointSize(12)
+        font.setPointSize(10)
         self.up_button.setFont(font)
         self.up_button.clicked.connect(self.increase_value)
         layout.addWidget(self.up_button)
@@ -48,16 +48,16 @@ class ValueSelector(QWidget):
         self.value_label = QLabel(str(self.current_value))
         self.value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         font = QFont()
-        font.setPointSize(16)
+        font.setPointSize(14)
         font.setBold(True)
         self.value_label.setFont(font)
         layout.addWidget(self.value_label)
         
         # 减少按钮
         self.down_button = QPushButton("▼")
-        self.down_button.setFixedHeight(40)
+        self.down_button.setFixedHeight(30)
         font = QFont()
-        font.setPointSize(12)
+        font.setPointSize(10)
         self.down_button.setFont(font)
         self.down_button.clicked.connect(self.decrease_value)
         layout.addWidget(self.down_button)
@@ -104,6 +104,7 @@ class AlarmConfigWidget(QWidget):
     """
     def __init__(self):
         super().__init__()
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         # 初始化报警参数范围
         self.temp_min = 10
         self.temp_max = 35
@@ -127,7 +128,7 @@ class AlarmConfigWidget(QWidget):
         # 标题
         title_label = QLabel("报警参数配置")
         font = QFont()
-        font.setPointSize(24)
+        font.setPointSize(18)
         font.setBold(True)
         title_label.setFont(font)
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -140,7 +141,7 @@ class AlarmConfigWidget(QWidget):
         
         temp_title = QLabel("温度报警范围 (°C)")
         font = QFont()
-        font.setPointSize(16)
+        font.setPointSize(12)
         font.setBold(True)
         temp_title.setFont(font)
         temp_layout.addWidget(temp_title)
@@ -166,7 +167,7 @@ class AlarmConfigWidget(QWidget):
         
         humidity_title = QLabel("湿度报警范围 (%)")
         font = QFont()
-        font.setPointSize(16)
+        font.setPointSize(12)
         font.setBold(True)
         humidity_title.setFont(font)
         humidity_layout.addWidget(humidity_title)
@@ -192,7 +193,7 @@ class AlarmConfigWidget(QWidget):
         
         light_title = QLabel("光照报警范围 (lux)")
         font = QFont()
-        font.setPointSize(16)
+        font.setPointSize(12)
         font.setBold(True)
         light_title.setFont(font)
         light_layout.addWidget(light_title)
@@ -218,7 +219,7 @@ class AlarmConfigWidget(QWidget):
         
         soil_title = QLabel("土壤湿度报警范围 (%)")
         font = QFont()
-        font.setPointSize(16)
+        font.setPointSize(12)
         font.setBold(True)
         soil_title.setFont(font)
         soil_layout.addWidget(soil_title)
@@ -239,9 +240,9 @@ class AlarmConfigWidget(QWidget):
         
         # 保存按钮
         self.save_button = QPushButton("保存配置")
-        self.save_button.setFixedHeight(50)
+        self.save_button.setFixedHeight(40)
         font = QFont()
-        font.setPointSize(16)
+        font.setPointSize(12)
         self.save_button.setFont(font)
         self.save_button.clicked.connect(self.save_config)
         layout.addWidget(self.save_button)
