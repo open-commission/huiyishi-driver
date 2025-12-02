@@ -6,10 +6,11 @@ UART传感器数据采集器
 通过串口读取真实的传感器数据
 """
 
-import time
-import serial
 import json
+
+import serial
 from PyQt6.QtCore import QTimer, QObject, pyqtSignal
+
 from models.environment_model import EnvironmentData
 
 
