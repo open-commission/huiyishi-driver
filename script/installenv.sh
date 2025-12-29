@@ -16,7 +16,8 @@ sudo apt update
 
 echo "📦 安装系统依赖..."
 sudo apt install -y python3 python3-venv python3-pip build-essential \
-    libxcb-cursor0 libxcb-cursor-dev qt6-qpa-plugins qt6-base-dev
+    libxcb-cursor0 libxcb-cursor-dev qt6-qpa-plugins qt6-base-dev \
+    python-dev build-essential
 
 # ===============================
 # 创建项目目录和虚拟环境
@@ -40,7 +41,7 @@ pip install "PyQt6" "pyqt6-sip" -i $PIP_INDEX || \
 pip install --no-build-isolation "PyQt6" "pyqt6-sip" -i $PIP_INDEX
 
 # 安装常用 Python 库
-pip install "numpy>=1.20.0" "pyserial>=3.5" -i $PIP_INDEX
+pip install "numpy>=1.20.0" "pyserial>=3.5" "evdev>=1.9.2" -i $PIP_INDEX
 
 # ===============================
 # 完成

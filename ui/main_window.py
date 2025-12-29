@@ -20,6 +20,7 @@ from ui.alarm_config_widget import AlarmConfigWidget
 from controllers.sensor_controller import SensorController, ServoController
 from database.db_manager import DatabaseManager
 from hardware.gpio_controller import GPIOController
+from hardware.ir_controller import IRController
 from models.environment_model import EnvironmentData
 
 
@@ -36,6 +37,7 @@ class MainWindow(QMainWindow):
         self.servo_controller = ServoController()
         self.database = DatabaseManager()
         self.gpio_controller = GPIOController()
+        self.ir_controller = IRController()
 
         # 设置UI
         self.init_ui()
@@ -49,6 +51,10 @@ class MainWindow(QMainWindow):
         # 连接GPIO控制器
         self.gpio_controller.set_max_pages(self.tab_widget.count())
         self.gpio_controller.page_changed.connect(self.on_gpio_page_changed)
+
+        # 启动红外事件监听
+        self.ir_controller.ir_event_logged.connect(self.on_ir_event_logged)
+        self.ir_controller.start_ir_monitoring()
 
     def init_ui(self):
         """
@@ -191,10 +197,23 @@ class MainWindow(QMainWindow):
             soil_min, soil_max
         )
 
+    def on_ir_event_logged(self, log_msg):
+        """
+        处理红外事件日志
+        
+        Args:
+            log_msg: 日志消息
+        """
+        print(log_msg)  # 在控制台输出红外事件
+        # 可以根据需要添加到状态栏或其他UI组件
+        self.status_label.setText(f"红外事件: {log_msg[-50:]}..." if len(log_msg) > 50 else f"红外事件: {log_msg}")
+
     def closeEvent(self, event):
         """
         窗口关闭事件处理
         """
         # 清理GPIO资源
         self.gpio_controller.cleanup()
+        # 清理红外控制器资源
+        self.ir_controller.cleanup()
         event.accept()
