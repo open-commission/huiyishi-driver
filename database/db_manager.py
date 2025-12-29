@@ -18,7 +18,7 @@ class DatabaseManager:
     """
     SQLite数据库管理器
     """
-    def __init__(self, db_path: str = "qiuyue.db"):
+    def __init__(self, db_path: str = "huiyishi.db"):
         self.db_path = db_path
         self.init_database()
     

@@ -33,7 +33,7 @@ class Config:
         self.history_data_limit = 100  # 历史数据最大数量
         
         # 数据库配置
-        self.database_path = os.getenv('DATABASE_PATH', 'qiuyue.db')
+        self.database_path = os.getenv('DATABASE_PATH', 'huiyishi.db')
         
     def is_development(self):
         """

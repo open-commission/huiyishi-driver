@@ -3,11 +3,11 @@
 # ==============================
 # 配置信息
 # ==============================
-REMOTE_USER="root"
-REMOTE_HOST="192.168.1.151"
+REMOTE_USER="kickpi"
+REMOTE_HOST="192.168.1.128"
 REMOTE_PASS="kickpi"
 REMOTE_DIR="/home/kickpi/desktop"
-REMOTE_PROJECT_DIR="$REMOTE_DIR/qiuyveli"
+REMOTE_PROJECT_DIR="$REMOTE_DIR/huiyishi"
 
 # ==============================
 # 参数处理
