@@ -3,7 +3,7 @@
 
 """
 统计分析界面
-显示种植过程中的各种统计数据
+显示会议室使用和设备运行的统计数据
 """
 
 import sys
@@ -52,15 +52,18 @@ class StatisticsChart(QWidget):
             
         # 绘制标题
         if self.title:
-            painter.drawText(10, 20, self.title)
+            title_font = QFont()
+            title_font.setPointSize(12)
+            title_font.setBold(True)
+            painter.setFont(title_font)
             
-        # 计算绘图区域
-        margin = 40
-        chart_rect = self.rect().adjusted(margin, 30, -margin, -margin)
+            painter.drawText(self.rect().left(), self.rect().top(), 
+                           self.rect().width(), 30,
+                           Qt.AlignmentFlag.AlignCenter, self.title)
         
-        if chart_rect.width() <= 0 or chart_rect.height() <= 0:
-            return
-            
+        # 计算绘图区域
+        chart_rect = self.rect().adjusted(40, 40, -20, -20)
+        
         # 查找最大值
         max_value = max([item[1] for item in self.data]) if self.data else 1
         max_value = max_value if max_value > 0 else 1  # 避免除零错误
@@ -117,104 +120,63 @@ class StatisticsWidget(QWidget):
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title_label)
         
-        # 产量统计
-        yield_group = QFrame()
-        yield_group.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
-        yield_layout = QVBoxLayout(yield_group)
+        # 会议室使用统计
+        usage_group = QFrame()
+        usage_group.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
+        usage_layout = QVBoxLayout(usage_group)
         
-        yield_title = QLabel("产量统计 (公斤)")
+        usage_title = QLabel("会议室使用统计 (小时)")
         font = QFont()
         font.setPointSize(14)
         font.setBold(True)
-        yield_title.setFont(font)
-        yield_layout.addWidget(yield_title)
+        usage_title.setFont(font)
+        usage_layout.addWidget(usage_title)
         
-        self.yield_chart = StatisticsChart()
-        yield_layout.addWidget(self.yield_chart)
+        self.usage_chart = StatisticsChart()
+        usage_layout.addWidget(self.usage_chart)
         
-        layout.addWidget(yield_group)
+        layout.addWidget(usage_group)
         
-        # 质量等级统计
-        quality_group = QFrame()
-        quality_group.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
-        quality_layout = QVBoxLayout(quality_group)
-        
-        quality_title = QLabel("质量等级分布")
+        # 设备运行统计
+        device_group = QFrame()
+        device_group.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
+        device_layout = QVBoxLayout(device_group)
+
+        device_title = QLabel("设备运行统计 (小时)")
         font = QFont()
         font.setPointSize(14)
         font.setBold(True)
-        quality_title.setFont(font)
-        quality_layout.addWidget(quality_title)
+        device_title.setFont(font)
+        device_layout.addWidget(device_title)
         
-        self.quality_chart = StatisticsChart()
-        quality_layout.addWidget(self.quality_chart)
+        self.device_chart = StatisticsChart()
+        device_layout.addWidget(self.device_chart)
         
-        layout.addWidget(quality_group)
-        
-        # 环境数据统计
-        env_group = QFrame()
-        env_group.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
-        env_layout = QVBoxLayout(env_group)
-        
-        env_title = QLabel("平均环境数据")
-        font = QFont()
-        font.setPointSize(14)
-        font.setBold(True)
-        env_title.setFont(font)
-        env_layout.addWidget(env_title)
-        
-        # 环境数据网格
-        env_grid = QGridLayout()
-        env_grid.setSpacing(10)
-        
-        env_stats = [
-            ("温度(°C)", "25.3"),
-            ("湿度(%)", "62.5"),
-            ("光照(k lux)", "15.2"),
-            ("土壤湿度(%)", "68.7")
-        ]
-        
-        for i, (label, value) in enumerate(env_stats):
-            stat_label = QLabel(label)
-            stat_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            stat_value = QLabel(value)
-            stat_value.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            font = QFont()
-            font.setPointSize(16)
-            font.setBold(True)
-            stat_value.setFont(font)
-            
-            row = i // 2
-            col = (i % 2) * 2
-            env_grid.addWidget(stat_label, row, col)
-            env_grid.addWidget(stat_value, row, col + 1)
-            
-        env_layout.addLayout(env_grid)
-        layout.addWidget(env_group)
+        layout.addWidget(device_group)
         
     def load_sample_data(self):
         """
         加载示例统计数据
         """
-        # 产量统计数据
-        yield_data = [
-            ("树1", 45),
-            ("树2", 52),
-            ("树3", 48),
-            ("树4", 55),
-            ("树5", 49),
-            ("树6", 51)
+        # 会议室使用统计数据
+        usage_data = [
+            ("会议室A", 45),
+            ("会议室B", 52),
+            ("会议室C", 48),
+            ("会议室D", 55),
+            ("会议室E", 49),
+            ("会议室F", 51)
         ]
-        self.yield_chart.set_data(yield_data)
+        self.usage_chart.set_data(usage_data)
         
-        # 质量等级分布
-        quality_data = [
-            ("特级", 15),
-            ("一级", 28),
-            ("二级", 32),
-            ("三级", 18)
+        # 设备运行统计
+        device_data = [
+            ("空调", 15),
+            ("投影仪", 28),
+            ("音响", 32),
+            ("照明", 18)
         ]
-        self.quality_chart.set_data(quality_data)
+        self.device_chart.set_data(device_data)
 
 
 if __name__ == "__main__":

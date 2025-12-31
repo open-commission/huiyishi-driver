@@ -3,52 +3,79 @@
 
 """
 报警监控界面
-显示环境异常报警信息
+显示当前活动的报警和历史报警记录
 """
 
 import sys
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, 
-                             QLabel, QFrame, QApplication, QPushButton, QListWidget,
-                             QListWidgetItem, QSizePolicy)
+                             QLabel, QFrame, QApplication, QListWidget, 
+                             QListWidgetItem, QSizePolicy, QPushButton)
 from PyQt6.QtCore import Qt, QTimer, QDateTime
-from PyQt6.QtGui import QFont, QColor, QPalette
+from PyQt6.QtGui import QFont, QColor
 from models.environment_model import EnvironmentData
 
 
-class AlarmItemWidget(QFrame):
+class AlarmItemWidget(QWidget):
     """
-    报警项显示小部件
+    报警项目显示小部件
     """
     def __init__(self, alarm_type, message, timestamp, parent=None):
         super().__init__(parent)
         
-        self.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
-        self.setLineWidth(1)
-        
-        layout = QVBoxLayout(self)
+        layout = QGridLayout(self)
+        layout.setContentsMargins(10, 5, 10, 5)
         layout.setSpacing(5)
         
         # 报警类型
         self.type_label = QLabel(alarm_type)
         font = QFont()
-        font.setPointSize(12)
         font.setBold(True)
         self.type_label.setFont(font)
         self.type_label.setStyleSheet("color: red;")
-        layout.addWidget(self.type_label)
-        
-        # 报警信息
-        self.message_label = QLabel(message)
-        self.message_label.setWordWrap(True)
-        layout.addWidget(self.message_label)
+        layout.addWidget(self.type_label, 0, 0)
         
         # 时间戳
         self.time_label = QLabel(timestamp)
         self.time_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.time_label, 0, 1)
+        
+        # 报警消息
+        self.message_label = QLabel(message)
+        self.message_label.setWordWrap(True)
+        layout.addWidget(self.message_label, 1, 0, 1, 2)
+
+
+
+
+
+class AlarmItemWidget(QWidget):
+    """
+    报警项目显示小部件
+    """
+    def __init__(self, alarm_type, message, timestamp, parent=None):
+        super().__init__(parent)
+        
+        layout = QGridLayout(self)
+        layout.setContentsMargins(10, 5, 10, 5)
+        layout.setSpacing(5)
+        
+        # 报警类型
+        self.type_label = QLabel(alarm_type)
         font = QFont()
-        font.setPointSize(8)
-        self.time_label.setFont(font)
-        layout.addWidget(self.time_label)
+        font.setBold(True)
+        self.type_label.setFont(font)
+        self.type_label.setStyleSheet("color: red;")
+        layout.addWidget(self.type_label, 0, 0)
+        
+        # 时间戳
+        self.time_label = QLabel(timestamp)
+        self.time_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.time_label, 0, 1)
+        
+        # 报警消息
+        self.message_label = QLabel(message)
+        self.message_label.setWordWrap(True)
+        layout.addWidget(self.message_label, 1, 0, 1, 2)
 
 
 class AlarmWidget(QWidget):
@@ -62,14 +89,18 @@ class AlarmWidget(QWidget):
         self.active_alarms = {}  # 当前活动报警
         
         # 报警阈值配置
-        self.temp_min = 10
-        self.temp_max = 35
-        self.humidity_min = 40
-        self.humidity_max = 80
-        self.light_min = 5000
-        self.light_max = 50000
-        self.soil_moisture_min = 30
-        self.soil_moisture_max = 80
+        self.temp_min = 18  # 会议室适宜温度范围
+        self.temp_max = 28
+        self.humidity_min = 30
+        self.humidity_max = 70
+        self.light_min = 300
+        self.light_max = 1000
+        self.co2_min = 400
+        self.co2_max = 1000  # 会议室CO2浓度上限
+        self.pm25_min = 0
+        self.pm25_max = 35  # PM2.5优良标准
+        self.occupancy_min = 0.1  # 会议室占用率范围
+        self.occupancy_max = 0.9  # 会议室占用率范围
         
         self.init_ui()
         
@@ -84,7 +115,7 @@ class AlarmWidget(QWidget):
         layout.setSpacing(15)
         
         # 标题
-        title_label = QLabel("环境异常报警监控")
+        title_label = QLabel("会议室环境异常报警监控")
         font = QFont()
         font.setPointSize(24)
         font.setBold(True)
@@ -143,19 +174,24 @@ class AlarmWidget(QWidget):
         layout.addStretch(1)
         
     def update_alarm_thresholds(self, temp_min, temp_max, humidity_min, humidity_max,
-                               light_min, light_max, soil_min, soil_max):
+                              light_min, light_max, co2_min, co2_max, pm25_min=0, pm25_max=35,
+                              occupancy_min=0.1, occupancy_max=0.9):
         """
-        更新报警阈值配置
+        更新报警阈值
         
         Args:
             temp_min: 温度最小值
             temp_max: 温度最大值
-            humidity_min: 湡度最小值
+            humidity_min: 湿度最小值
             humidity_max: 湿度最大值
             light_min: 光照最小值
             light_max: 光照最大值
-            soil_min: 土壤湿度最小值
-            soil_max: 土壤湿度最大值
+            co2_min: CO2最小值
+            co2_max: CO2最大值
+            pm25_min: PM2.5最小值
+            pm25_max: PM2.5最大值
+            occupancy_min: 会议室占用率最小值
+            occupancy_max: 会议室占用率最大值
         """
         self.temp_min = temp_min
         self.temp_max = temp_max
@@ -163,8 +199,12 @@ class AlarmWidget(QWidget):
         self.humidity_max = humidity_max
         self.light_min = light_min
         self.light_max = light_max
-        self.soil_moisture_min = soil_min
-        self.soil_moisture_max = soil_max
+        self.co2_min = co2_min
+        self.co2_max = co2_max
+        self.pm25_min = pm25_min
+        self.pm25_max = pm25_max
+        self.occupancy_min = occupancy_min
+        self.occupancy_max = occupancy_max
         
     def on_sensor_data_updated(self, env_data: EnvironmentData):
         """
@@ -177,7 +217,7 @@ class AlarmWidget(QWidget):
         
     def check_alarms(self, env_data: EnvironmentData):
         """
-        检查环境数据并生成报警
+        检查报警条件
         
         Args:
             env_data: EnvironmentData对象
@@ -206,13 +246,27 @@ class AlarmWidget(QWidget):
         else:
             self.clear_alarm("光照")
             
-        # 检查土壤湿度报警
-        if env_data.soil_moisture < self.soil_moisture_min:
-            self.add_alarm("土壤过干", f"当前土壤湿度 {env_data.soil_moisture}% < {self.soil_moisture_min}%")
-        elif env_data.soil_moisture > self.soil_moisture_max:
-            self.add_alarm("土壤过湿", f"当前土壤湿度 {env_data.soil_moisture}% > {self.soil_moisture_max}%")
+        # 检查二氧化碳报警
+        if env_data.co2 < self.co2_min:
+            self.add_alarm("CO2过低", f"当前CO2浓度 {env_data.co2}ppm < {self.co2_min}ppm")
+        elif env_data.co2 > self.co2_max:
+            self.add_alarm("CO2过高", f"当前CO2浓度 {env_data.co2}ppm > {self.co2_max}ppm")
         else:
-            self.clear_alarm("土壤湿度")
+            self.clear_alarm("CO2")
+        
+        # 检查PM2.5报警
+        if env_data.pm25 > self.pm25_max:
+            self.add_alarm("PM2.5超标", f"当前PM2.5浓度 {env_data.pm25}μg/m³ > {self.pm25_max}μg/m³")
+        else:
+            self.clear_alarm("PM2.5")
+            
+        # 检查占用率报警
+        if env_data.occupancy < self.occupancy_min:
+            self.add_alarm("会议室占用率过低", f"当前占用率 {env_data.occupancy*100:.1f}% < {self.occupancy_min*100:.1f}%")
+        elif env_data.occupancy > self.occupancy_max:
+            self.add_alarm("会议室占用率过高", f"当前占用率 {env_data.occupancy*100:.1f}% > {self.occupancy_max*100:.1f}%")
+        else:
+            self.clear_alarm("会议室占用率")
             
         # 更新显示
         self.update_alarm_display()
@@ -307,11 +361,11 @@ class AlarmWidget(QWidget):
         
     def simulate_initial_alarms(self):
         """
-        模拟初始报警用于测试
+        模拟会议室环境初始报警用于测试
         """
         # 添加一些示例报警
-        self.add_alarm("温度过高", "当前温度 36.5°C > 35°C")
-        self.add_alarm("湿度过低", "当前湿度 35% < 40%")
+        self.add_alarm("CO2过高", "当前CO2浓度 1200ppm > 1000ppm")
+        self.add_alarm("PM2.5超标", "当前PM2.5浓度 50μg/m³ > 35μg/m³")
         
         # 更新显示
         self.update_alarm_display()

@@ -2,26 +2,27 @@
 # -*- coding: utf-8 -*-
 
 """
-通风控制界面
-用于控制通风设备并记录操作历史
+会议室控制界面
+用于控制会议室设备并记录操作历史
 """
 
 import sys
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
                              QLabel, QFrame, QApplication, QPushButton, QListWidget,
-                             QListWidgetItem, QSizePolicy)
+                             QListWidgetItem, QSizePolicy, QLineEdit, QGroupBox)
 from PyQt6.QtCore import Qt, QDateTime, QTimer
 from PyQt6.QtGui import QFont, QColor
 
 
 class VentilationWidget(QWidget):
     """
-    通风控制界面
+    会议室控制界面
     """
     def __init__(self):
         super().__init__()
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.ventilation_status = False  # False表示关闭，True表示开启
+        self.servo_status = False  # 舵机状态 False表示关闭，True表示开启
+        self.rfid_status = False   # RFID状态
         self.operation_history = []  # 操作历史记录
         self.init_ui()
         self.load_sample_history()
@@ -34,7 +35,7 @@ class VentilationWidget(QWidget):
         layout.setSpacing(15)
         
         # 标题
-        title_label = QLabel("通风控制")
+        title_label = QLabel("会议室控制")
         font = QFont()
         font.setPointSize(24)
         font.setBold(True)
@@ -47,21 +48,32 @@ class VentilationWidget(QWidget):
         status_group.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
         status_layout = QVBoxLayout(status_group)
         
-        status_title = QLabel("通风状态")
+        status_title = QLabel("设备状态")
         font = QFont()
         font.setPointSize(16)
         font.setBold(True)
         status_title.setFont(font)
         status_layout.addWidget(status_title)
         
-        self.status_label = QLabel("通风设备: 已关闭")
+        # 舵机状态
+        self.servo_status_label = QLabel("舵机状态: 未激活")
         font = QFont()
-        font.setPointSize(18)
+        font.setPointSize(14)
         font.setBold(True)
-        self.status_label.setFont(font)
-        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.update_status_label()
-        status_layout.addWidget(self.status_label)
+        self.servo_status_label.setFont(font)
+        self.servo_status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.update_servo_status_label()
+        status_layout.addWidget(self.servo_status_label)
+        
+        # RFID状态
+        self.rfid_status_label = QLabel("RFID读取: 未激活")
+        font = QFont()
+        font.setPointSize(14)
+        font.setBold(True)
+        self.rfid_status_label.setFont(font)
+        self.rfid_status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.update_rfid_status_label()
+        status_layout.addWidget(self.rfid_status_label)
         
         layout.addWidget(status_group)
         
@@ -77,14 +89,28 @@ class VentilationWidget(QWidget):
         control_title.setFont(font)
         control_layout.addWidget(control_title)
         
-        # 控制按钮
-        self.control_button = QPushButton("开启通风")
-        self.control_button.setFixedHeight(60)
+        # 舵机控制按钮
+        self.servo_control_button = QPushButton("激活舵机")
+        self.servo_control_button.setFixedHeight(60)
         font = QFont()
         font.setPointSize(16)
-        self.control_button.setFont(font)
-        self.control_button.clicked.connect(self.toggle_ventilation)
-        control_layout.addWidget(self.control_button)
+        self.servo_control_button.setFont(font)
+        self.servo_control_button.clicked.connect(self.toggle_servo)
+        control_layout.addWidget(self.servo_control_button)
+        
+        # RFID模拟输入区域
+        rfid_group = QGroupBox("RFID读取")
+        rfid_layout = QVBoxLayout(rfid_group)
+        
+        self.rfid_input = QLineEdit()
+        self.rfid_input.setPlaceholderText("输入RFID卡号或点击按钮模拟读取")
+        rfid_layout.addWidget(self.rfid_input)
+        
+        self.rfid_read_button = QPushButton("模拟RFID读取")
+        self.rfid_read_button.clicked.connect(self.simulate_rfid_read)
+        rfid_layout.addWidget(self.rfid_read_button)
+        
+        control_layout.addWidget(rfid_group)
         
         layout.addWidget(control_group)
         
@@ -113,23 +139,23 @@ class VentilationWidget(QWidget):
         self.button_timer.setSingleShot(True)
         self.button_timer.timeout.connect(self.reset_button_text)
         
-    def toggle_ventilation(self):
+    def toggle_servo(self):
         """
-        切换通风设备状态
+        切换舵机状态
         """
-        self.ventilation_status = not self.ventilation_status
-        self.update_status_label()
+        self.servo_status = not self.servo_status
+        self.update_servo_status_label()
         
         # 更新按钮文本
-        if self.ventilation_status:
-            self.control_button.setText("关闭通风")
+        if self.servo_status:
+            self.servo_control_button.setText("关闭舵机")
         else:
-            self.control_button.setText("开启通风")
+            self.servo_control_button.setText("激活舵机")
             
         # 记录操作历史
         timestamp = QDateTime.currentDateTime().toString("yyyy-MM-dd hh:mm:ss")
-        status_text = "开启" if self.ventilation_status else "关闭"
-        operation = f"[{timestamp}] 通风设备{status_text}"
+        status_text = "激活" if self.servo_status else "关闭"
+        operation = f"[{timestamp}] 舵机{status_text}"
         self.operation_history.append(operation)
         
         # 限制历史记录数量
@@ -139,16 +165,54 @@ class VentilationWidget(QWidget):
         # 更新历史记录显示
         self.update_history_display()
         
-    def update_status_label(self):
+    def simulate_rfid_read(self):
         """
-        更新状态标签显示
+        模拟RFID读取
         """
-        if self.ventilation_status:
-            self.status_label.setText("通风设备: 运行中")
-            self.status_label.setStyleSheet("color: green; font-weight: bold;")
+        # 模拟RFID读取
+        rfid_code = self.rfid_input.text()
+        if not rfid_code:
+            # 如果没有输入，生成一个模拟的RFID码
+            import random
+            rfid_code = f"RFID_{random.randint(1000, 9999)}"
+        
+        timestamp = QDateTime.currentDateTime().toString("yyyy-MM-dd hh:mm:ss")
+        operation = f"[{timestamp}] RFID读取: {rfid_code}"
+        self.operation_history.append(operation)
+        
+        # 限制历史记录数量
+        if len(self.operation_history) > 50:
+            self.operation_history.pop(0)
+            
+        # 更新历史记录显示
+        self.update_history_display()
+        
+        # 显示RFID读取成功提示
+        self.rfid_read_button.setText("读取成功")
+        self.button_timer.timeout.connect(lambda: setattr(self.rfid_read_button, 'text', '模拟RFID读取'))
+        self.button_timer.start(1000)  # 1秒后恢复按钮文本
+        
+    def update_servo_status_label(self):
+        """
+        更新舵机状态标签显示
+        """
+        if self.servo_status:
+            self.servo_status_label.setText("舵机状态: 运行中")
+            self.servo_status_label.setStyleSheet("color: green; font-weight: bold;")
         else:
-            self.status_label.setText("通风设备: 已关闭")
-            self.status_label.setStyleSheet("color: red; font-weight: bold;")
+            self.servo_status_label.setText("舵机状态: 已停止")
+            self.servo_status_label.setStyleSheet("color: red; font-weight: bold;")
+            
+    def update_rfid_status_label(self):
+        """
+        更新RFID状态标签显示
+        """
+        if self.rfid_status:
+            self.rfid_status_label.setText("RFID读取: 活跃")
+            self.rfid_status_label.setStyleSheet("color: green; font-weight: bold;")
+        else:
+            self.rfid_status_label.setText("RFID读取: 未激活")
+            self.rfid_status_label.setStyleSheet("color: gray; font-weight: bold;")
             
     def update_history_display(self):
         """
@@ -158,21 +222,26 @@ class VentilationWidget(QWidget):
         # 按时间倒序显示
         for operation in reversed(self.operation_history):
             item = QListWidgetItem(operation)
-            if "开启" in operation:
+            if "激活" in operation or "运行" in operation or "读取" in operation:
                 item.setForeground(QColor("green"))
-            else:
+            elif "关闭" in operation or "停止" in operation:
                 item.setForeground(QColor("red"))
+            else:
+                item.setForeground(QColor("black"))
             self.history_list.addItem(item)
             
     def reset_button_text(self):
         """
         恢复按钮文本
         """
-        if self.ventilation_status:
-            self.control_button.setText("关闭通风")
+        if self.servo_status:
+            self.servo_control_button.setText("关闭舵机")
         else:
-            self.control_button.setText("开启通风")
+            self.servo_control_button.setText("激活舵机")
             
+        # 恢复RFID按钮文本
+        self.rfid_read_button.setText("模拟RFID读取")
+        
     def load_sample_history(self):
         """
         加载示例操作历史
@@ -180,10 +249,10 @@ class VentilationWidget(QWidget):
         # 添加一些示例历史记录
         now = QDateTime.currentDateTime()
         self.operation_history = [
-            f"[{now.addDays(-1).toString('yyyy-MM-dd hh:mm:ss')}] 通风设备开启",
-            f"[{now.addDays(-1).addSecs(3600*4).toString('yyyy-MM-dd hh:mm:ss')}] 通风设备关闭",
-            f"[{now.addDays(-1).addSecs(3600*8).toString('yyyy-MM-dd hh:mm:ss')}] 通风设备开启",
-            f"[{now.addDays(-1).addSecs(3600*12).toString('yyyy-MM-dd hh:mm:ss')}] 通风设备关闭"
+            f"[{now.addDays(-1).toString('yyyy-MM-dd hh:mm:ss')}] 舵机激活",
+            f"[{now.addDays(-1).addSecs(3600*4).toString('yyyy-MM-dd hh:mm:ss')}] RFID读取: RFID_1234",
+            f"[{now.addDays(-1).addSecs(3600*8).toString('yyyy-MM-dd hh:mm:ss')}] 舵机关闭",
+            f"[{now.addDays(-1).addSecs(3600*12).toString('yyyy-MM-dd hh:mm:ss')}] RFID读取: RFID_5678"
         ]
         
         self.update_history_display()

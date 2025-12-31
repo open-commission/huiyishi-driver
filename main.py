@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-秋月梨种植环境监测与生产溯源管理系统
+基于esp8266与H618的多功能会议室管理终端
 Main Application Entry Point
 """
 
@@ -35,7 +35,7 @@ def main():
         print(f"UART波特率: {config.uart_baudrate}")
 
     app = QApplication(sys.argv)
-    app.setApplicationName("秋月梨种植环境监测与生产溯源管理系统")
+    app.setApplicationName("基于esp8266与H618的多功能会议室管理终端")
     app.setApplicationVersion("1.0.0")
 
     # 创建主窗口

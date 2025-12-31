@@ -3,7 +3,7 @@
 
 """
 主窗口界面
-包含环境监测、生产溯源和控制界面三个主要部分
+包含会议室环境监测、会议室控制和管理界面三个主要部分
 """
 
 from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QVBoxLayout, QWidget,
@@ -13,7 +13,7 @@ from ui.dashboard_widget import DashboardWidget
 from ui.monitor_widget import MonitorWidget
 from ui.history_widget import HistoryWidget
 from ui.alarm_widget import AlarmWidget
-from ui.planting_record_widget import PlantingRecordWidget
+from ui.planting_record_widget import PlantingRecordWidget  # 会议室记录
 from ui.ventilation_widget import VentilationWidget
 from ui.watering_widget import WateringWidget
 from ui.alarm_config_widget import AlarmConfigWidget
@@ -60,7 +60,7 @@ class MainWindow(QMainWindow):
         """
         初始化用户界面
         """
-        self.setWindowTitle("秋月梨种植环境监测与生产溯源管理系统")
+        self.setWindowTitle("基于esp8266与H618的多功能会议室管理终端")
         # 设置窗口大小
         self.resize(1024, 768)
         self.setMinimumSize(QSize(800, 600))
@@ -80,11 +80,11 @@ class MainWindow(QMainWindow):
 
         # 创建各个功能页面
         self.dashboard_widget = DashboardWidget()  # 主仪表盘
-        self.monitor_widget = MonitorWidget()  # 环境监测（不含历史数据）
+        self.monitor_widget = MonitorWidget()  # 会议室环境监测（不含历史数据）
         self.history_widget = HistoryWidget()  # 历史数据（从环境监测拆分）
-        self.planting_record_widget = PlantingRecordWidget()  # 种植记录（原天气预报+农事指导）
-        self.ventilation_widget = VentilationWidget()  # 通风控制
-        self.watering_widget = WateringWidget()  # 浇水控制
+        self.meeting_record_widget = PlantingRecordWidget()  # 会议室记录
+        self.room_control_widget = VentilationWidget()  # 会议室控制（类名保持不变以避免重构）
+        self.device_control_widget = WateringWidget()  # 设备控制（类名保持不变以避免重构）
         self.alarm_config_widget = AlarmConfigWidget()  # 报警配置
         self.alarm_widget = AlarmWidget()  # 报警监控
 
@@ -92,19 +92,19 @@ class MainWindow(QMainWindow):
         self.dashboard_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.monitor_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.history_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.planting_record_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.ventilation_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.watering_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.meeting_record_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.room_control_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.device_control_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.alarm_config_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.alarm_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # 添加页面到标签页控件（只保留不需要输入的界面）
         self.tab_widget.addTab(self.dashboard_widget, "主仪表盘")
-        self.tab_widget.addTab(self.monitor_widget, "环境监测")
+        self.tab_widget.addTab(self.monitor_widget, "会议室环境")
         self.tab_widget.addTab(self.history_widget, "历史数据")
-        self.tab_widget.addTab(self.planting_record_widget, "种植记录")
-        self.tab_widget.addTab(self.ventilation_widget, "通风控制")
-        self.tab_widget.addTab(self.watering_widget, "浇水控制")
+        self.tab_widget.addTab(self.meeting_record_widget, "会议室记录")
+        self.tab_widget.addTab(self.room_control_widget, "会议室控制")
+        self.tab_widget.addTab(self.device_control_widget, "设备控制")
         self.tab_widget.addTab(self.alarm_config_widget, "报警配置")
         self.tab_widget.addTab(self.alarm_widget, "报警监控")
 
@@ -140,20 +140,39 @@ class MainWindow(QMainWindow):
         self.status_label.setText(f"环境数据更新: 温度 {env_data.temperature}°C, "
                                   f"湿度 {env_data.humidity}%, "
                                   f"光照 {env_data.light}lux, "
-                                  f"土壤湿度 {env_data.soil_moisture}%")
+                                  f"CO2 {env_data.co2}ppm, "
+                                  f"PM2.5 {env_data.pm25}μg/m³, "
+                                  f"占用率 {env_data.occupancy*100:.1f}%")
 
-        # 更新仪表盘数据
-        self.dashboard_widget.on_sensor_data_updated(env_data)
+        # 安全更新仪表盘数据
+        try:
+            if self.dashboard_widget:
+                self.dashboard_widget.on_sensor_data_updated(env_data)
+        except RuntimeError:
+            # 组件可能已被删除，忽略错误
+            pass
 
         # 更新环境监测页面数据
-        self.monitor_widget.on_sensor_data_updated(env_data)
+        try:
+            if self.monitor_widget:
+                self.monitor_widget.on_sensor_data_updated(env_data)
+        except RuntimeError:
+            pass
 
         # 更新报警监控数据
-        self.alarm_widget.on_sensor_data_updated(env_data)
+        try:
+            if self.alarm_widget:
+                self.alarm_widget.on_sensor_data_updated(env_data)
+        except RuntimeError:
+            pass
 
         # 更新历史数据并传递给历史数据页面
-        history_data = self.sensor_controller.get_history_data(50)
-        self.history_widget.update_history_table(history_data)
+        try:
+            if self.history_widget:
+                history_data = self.sensor_controller.get_history_data(50)
+                self.history_widget.update_history_table(history_data)
+        except RuntimeError:
+            pass
 
     def on_servo_status_changed(self, is_active):
         """
@@ -186,15 +205,20 @@ class MainWindow(QMainWindow):
         humidity_max = self.alarm_config_widget.humidity_max_selector.get_value()
         light_min = self.alarm_config_widget.light_min_selector.get_value()
         light_max = self.alarm_config_widget.light_max_selector.get_value()
-        soil_min = self.alarm_config_widget.soil_min_selector.get_value()
-        soil_max = self.alarm_config_widget.soil_max_selector.get_value()
+        co2_min = self.alarm_config_widget.co2_min_selector.get_value()
+        co2_max = self.alarm_config_widget.co2_max_selector.get_value()
 
         # 更新报警监控组件的阈值
+        occupancy_min = self.alarm_config_widget.occupancy_min_selector.get_value()
+        occupancy_max = self.alarm_config_widget.occupancy_max_selector.get_value()
+        
         self.alarm_widget.update_alarm_thresholds(
             temp_min, temp_max,
             humidity_min, humidity_max,
             light_min, light_max,
-            soil_min, soil_max
+            co2_min, co2_max,
+            occupancy_min=occupancy_min,
+            occupancy_max=occupancy_max
         )
 
     def on_ir_event_logged(self, log_msg):

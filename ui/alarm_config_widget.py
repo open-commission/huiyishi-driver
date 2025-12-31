@@ -3,37 +3,38 @@
 
 """
 报警配置界面
-用于配置报警参数范围
+用于设置各项环境指标的报警阈值
 """
 
 import sys
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                             QLabel, QFrame, QApplication, QPushButton, QSizePolicy)
-from PyQt6.QtCore import Qt, pyqtSignal, QTimer
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame, 
+                             QLabel, QApplication, QPushButton)
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 
 
 class ValueSelector(QWidget):
     """
-    数值选择器组件（模拟滚轮效果）
+    数值选择器组件
+    用于选择报警阈值
     """
-    # 定义值改变信号
-    value_changed = pyqtSignal(int)
+    value_changed = pyqtSignal(float)  # 数值变化信号
     
-    def __init__(self, min_value=0, max_value=100, current_value=50, step=1, parent=None):
+    def __init__(self, min_value, max_value, initial_value, step=1, parent=None):
         super().__init__(parent)
         self.min_value = min_value
         self.max_value = max_value
-        self.current_value = current_value
+        self.current_value = initial_value
         self.step = step
+        
         self.init_ui()
         
     def init_ui(self):
         """
         初始化界面
         """
-        layout = QVBoxLayout(self)
-        layout.setSpacing(5)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
         
         # 增加按钮
         self.up_button = QPushButton("▲")
@@ -104,16 +105,20 @@ class AlarmConfigWidget(QWidget):
     """
     def __init__(self):
         super().__init__()
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        # 初始化报警参数范围
-        self.temp_min = 10
-        self.temp_max = 35
-        self.humidity_min = 40
-        self.humidity_max = 80
-        self.light_min = 5000
-        self.light_max = 50000
-        self.soil_moisture_min = 30
-        self.soil_moisture_max = 80
+        
+        # 报警阈值配置
+        self.temp_min = 18
+        self.temp_max = 28
+        self.humidity_min = 30
+        self.humidity_max = 70
+        self.light_min = 300
+        self.light_max = 1000
+        self.co2_min = 400
+        self.co2_max = 1000
+        self.pm25_min = 0
+        self.pm25_max = 35
+        self.occupancy_min = 0.1
+        self.occupancy_max = 0.9
         
         self.init_ui()
         self.load_default_values()
@@ -126,7 +131,7 @@ class AlarmConfigWidget(QWidget):
         layout.setSpacing(15)
         
         # 标题
-        title_label = QLabel("报警参数配置")
+        title_label = QLabel("会议室环境报警参数配置")
         font = QFont()
         font.setPointSize(18)
         font.setBold(True)
@@ -212,31 +217,83 @@ class AlarmConfigWidget(QWidget):
         light_layout.addLayout(light_selector_layout)
         layout.addWidget(light_group)
         
-        # 土壤湿度配置
-        soil_group = QFrame()
-        soil_group.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
-        soil_layout = QVBoxLayout(soil_group)
+        # 二氧化碳配置
+        co2_group = QFrame()
+        co2_group.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
+        co2_layout = QVBoxLayout(co2_group)
         
-        soil_title = QLabel("土壤湿度报警范围 (%)")
+        co2_title = QLabel("二氧化碳报警范围 (ppm)")
         font = QFont()
         font.setPointSize(12)
         font.setBold(True)
-        soil_title.setFont(font)
-        soil_layout.addWidget(soil_title)
+        co2_title.setFont(font)
+        co2_layout.addWidget(co2_title)
         
-        soil_selector_layout = QHBoxLayout()
-        soil_selector_layout.addWidget(QLabel("最小值:"))
+        co2_selector_layout = QHBoxLayout()
+        co2_selector_layout.addWidget(QLabel("最小值:"))
         
-        self.soil_min_selector = ValueSelector(0, 100, self.soil_moisture_min, 1)
-        soil_selector_layout.addWidget(self.soil_min_selector)
+        self.co2_min_selector = ValueSelector(0, 2000, self.co2_min, 10)
+        co2_selector_layout.addWidget(self.co2_min_selector)
         
-        soil_selector_layout.addWidget(QLabel("最大值:"))
+        co2_selector_layout.addWidget(QLabel("最大值:"))
         
-        self.soil_max_selector = ValueSelector(0, 100, self.soil_moisture_max, 1)
-        soil_selector_layout.addWidget(self.soil_max_selector)
+        self.co2_max_selector = ValueSelector(0, 2000, self.co2_max, 10)
+        co2_selector_layout.addWidget(self.co2_max_selector)
         
-        soil_layout.addLayout(soil_selector_layout)
-        layout.addWidget(soil_group)
+        co2_layout.addLayout(co2_selector_layout)
+        layout.addWidget(co2_group)
+        
+        # PM2.5配置
+        pm25_group = QFrame()
+        pm25_group.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
+        pm25_layout = QVBoxLayout(pm25_group)
+        
+        pm25_title = QLabel("PM2.5报警范围 (μg/m³)")
+        font = QFont()
+        font.setPointSize(12)
+        font.setBold(True)
+        pm25_title.setFont(font)
+        pm25_layout.addWidget(pm25_title)
+        
+        pm25_selector_layout = QHBoxLayout()
+        pm25_selector_layout.addWidget(QLabel("最小值:"))
+        
+        self.pm25_min_selector = ValueSelector(0, 500, self.pm25_min, 1)
+        pm25_selector_layout.addWidget(self.pm25_min_selector)
+        
+        pm25_selector_layout.addWidget(QLabel("最大值:"))
+        
+        self.pm25_max_selector = ValueSelector(0, 500, self.pm25_max, 1)
+        pm25_selector_layout.addWidget(self.pm25_max_selector)
+        
+        pm25_layout.addLayout(pm25_selector_layout)
+        layout.addWidget(pm25_group)
+        
+        # 会议室占用率配置
+        occupancy_group = QFrame()
+        occupancy_group.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
+        occupancy_layout = QVBoxLayout(occupancy_group)
+        
+        occupancy_title = QLabel("会议室占用率报警范围")
+        font = QFont()
+        font.setPointSize(12)
+        font.setBold(True)
+        occupancy_title.setFont(font)
+        occupancy_layout.addWidget(occupancy_title)
+        
+        occupancy_selector_layout = QHBoxLayout()
+        occupancy_selector_layout.addWidget(QLabel("最小值:"))
+        
+        self.occupancy_min_selector = ValueSelector(0, 1.0, self.occupancy_min, 0.01)
+        occupancy_selector_layout.addWidget(self.occupancy_min_selector)
+        
+        occupancy_selector_layout.addWidget(QLabel("最大值:"))
+        
+        self.occupancy_max_selector = ValueSelector(0, 1.0, self.occupancy_max, 0.01)
+        occupancy_selector_layout.addWidget(self.occupancy_max_selector)
+        
+        occupancy_layout.addLayout(occupancy_selector_layout)
+        layout.addWidget(occupancy_group)
         
         # 保存按钮
         self.save_button = QPushButton("保存配置")
@@ -250,11 +307,6 @@ class AlarmConfigWidget(QWidget):
         # 设置布局伸缩因子以填满窗口
         layout.addStretch(1)
         
-        # 创建定时器用于按钮文本恢复
-        self.button_timer = QTimer()
-        self.button_timer.setSingleShot(True)
-        self.button_timer.timeout.connect(self.reset_save_button_text)
-        
     def load_default_values(self):
         """
         加载默认值
@@ -265,8 +317,12 @@ class AlarmConfigWidget(QWidget):
         self.humidity_max_selector.set_value(self.humidity_max)
         self.light_min_selector.set_value(self.light_min)
         self.light_max_selector.set_value(self.light_max)
-        self.soil_min_selector.set_value(self.soil_moisture_min)
-        self.soil_max_selector.set_value(self.soil_moisture_max)
+        self.co2_min_selector.set_value(self.co2_min)
+        self.co2_max_selector.set_value(self.co2_max)
+        self.pm25_min_selector.set_value(self.pm25_min)
+        self.pm25_max_selector.set_value(self.pm25_max)
+        self.occupancy_min_selector.set_value(self.occupancy_min)
+        self.occupancy_max_selector.set_value(self.occupancy_max)
         
     def save_config(self):
         """
@@ -279,8 +335,12 @@ class AlarmConfigWidget(QWidget):
         self.humidity_max = self.humidity_max_selector.get_value()
         self.light_min = self.light_min_selector.get_value()
         self.light_max = self.light_max_selector.get_value()
-        self.soil_moisture_min = self.soil_min_selector.get_value()
-        self.soil_moisture_max = self.soil_max_selector.get_value()
+        self.co2_min = self.co2_min_selector.get_value()
+        self.co2_max = self.co2_max_selector.get_value()
+        self.pm25_min = self.pm25_min_selector.get_value()
+        self.pm25_max = self.pm25_max_selector.get_value()
+        self.occupancy_min = self.occupancy_min_selector.get_value()
+        self.occupancy_max = self.occupancy_max_selector.get_value()
         
         # 确保最小值不大于最大值
         if self.temp_min >= self.temp_max:
@@ -292,8 +352,14 @@ class AlarmConfigWidget(QWidget):
         if self.light_min >= self.light_max:
             self.light_min = self.light_max - 1000
             
-        if self.soil_moisture_min >= self.soil_moisture_max:
-            self.soil_moisture_min = self.soil_moisture_max - 1
+        if self.co2_min >= self.co2_max:
+            self.co2_min = self.co2_max - 10
+        
+        if self.pm25_min >= self.pm25_max:
+            self.pm25_min = self.pm25_max - 1
+            
+        if self.occupancy_min >= self.occupancy_max:
+            self.occupancy_min = self.occupancy_max - 0.01
             
         # 更新显示
         self.load_default_values()

@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-种植记录界面
-用于记录每日种植效果和异常情况
+会议室记录界面
+用于记录每日会议室使用情况和状态
 """
 
 import sys
@@ -16,7 +16,7 @@ from PyQt6.QtGui import QFont, QColor
 
 class PlantingRecordWidget(QWidget):
     """
-    种植记录界面
+    会议室记录界面
     """
     def __init__(self):
         super().__init__()
@@ -34,7 +34,7 @@ class PlantingRecordWidget(QWidget):
         layout.setSpacing(15)
         
         # 标题
-        title_label = QLabel("种植记录")
+        title_label = QLabel("会议室使用记录")
         font = QFont()
         font.setPointSize(18)
         font.setBold(True)
@@ -72,8 +72,8 @@ class PlantingRecordWidget(QWidget):
         # 预定义状态按钮
         status_layout = QGridLayout()
         statuses = [
-            "生长良好", "生长缓慢", "叶片发黄", "果实膨大", 
-            "开花期", "结果期", "休眠期", "采收期"
+            "会议室空闲", "会议进行中", "设备维护", "清洁中", 
+            "预约中", "已预订", "会议结束", "设备故障"
         ]
         
         self.status_buttons = []
@@ -93,9 +93,9 @@ class PlantingRecordWidget(QWidget):
         
         anomaly_layout = QGridLayout()
         anomalies = [
-            "无异常", "虫灾", "水灾", "温度过高", 
-            "温度过低", "干旱", "病害", "营养不足",
-            "霜冻", "风灾", "药害", "肥害"
+            "无异常", "设备故障", "空调异常", "照明异常", 
+            "网络故障", "清洁问题", "预约冲突", "设备缺失",
+            "温度异常", "湿度异常", "噪音干扰", "其他问题"
         ]
         
         self.anomaly_buttons = []
@@ -183,10 +183,10 @@ class PlantingRecordWidget(QWidget):
             
     def select_status(self, status):
         """
-        选择生长状态
+        选择会议室状态
         
         Args:
-            status: 生长状态
+            status: 会议室状态
         """
         # 取消其他状态按钮的选中状态
         for button in self.status_buttons:
@@ -297,18 +297,18 @@ class PlantingRecordWidget(QWidget):
         self.records = {
             today.toString("yyyy-MM-dd"): {
                 "date": today.toString("yyyy年MM月dd日"),
-                "status": "生长良好",
+                "status": "会议进行中",
                 "anomalies": ["无异常"]
             },
             yesterday.toString("yyyy-MM-dd"): {
                 "date": yesterday.toString("yyyy年MM月dd日"),
-                "status": "开花期",
-                "anomalies": ["虫灾"]
+                "status": "设备维护",
+                "anomalies": ["设备故障"]
             },
             last_week.toString("yyyy-MM-dd"): {
                 "date": last_week.toString("yyyy年MM月dd日"),
-                "status": "果实膨大",
-                "anomalies": ["温度过高"]
+                "status": "会议室空闲",
+                "anomalies": ["温度异常"]
             }
         }
         

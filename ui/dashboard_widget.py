@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 
 """
-主仪表盘界面
-显示关键环境指标的概览
+仪表盘显示组件
+显示当前环境数据的综合视图
 """
 
 import sys
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, 
-                             QLabel, QFrame, QApplication, QProgressBar, QSizePolicy)
+                             QLabel, QFrame, QApplication, QProgressBar)
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QFont, QColor, QPalette
 from models.environment_model import EnvironmentData
@@ -119,11 +119,11 @@ class StatusIndicator(QWidget):
 
 class DashboardWidget(QWidget):
     """
-    主仪表盘界面
+    仪表盘显示组件
     """
-    def __init__(self):
-        super().__init__()
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
         self.init_ui()
         self.init_timer()
         
@@ -135,7 +135,7 @@ class DashboardWidget(QWidget):
         layout.setSpacing(15)
         
         # 标题
-        title_label = QLabel("秋月梨种植环境监控仪表盘")
+        title_label = QLabel("会议室环境监控仪表盘")
         font = QFont()
         font.setPointSize(24)
         font.setBold(True)
@@ -143,9 +143,11 @@ class DashboardWidget(QWidget):
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title_label)
         
-        # 关键指标显示
-        metrics_layout = QGridLayout()
-        metrics_layout.setSpacing(15)
+        # 指标显示区域
+        metrics_group = QFrame()
+        metrics_group.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
+        metrics_layout = QGridLayout(metrics_group)
+        metrics_layout.setSpacing(20)
         
         # 温度
         self.temp_widget = DashboardValueWidget("温度", "°C")
@@ -156,12 +158,12 @@ class DashboardWidget(QWidget):
         metrics_layout.addWidget(self.humidity_widget, 0, 1)
         
         # 光照
-        self.light_widget = DashboardValueWidget("光照", "k lux")
+        self.light_widget = DashboardValueWidget("光照", "klx")
         metrics_layout.addWidget(self.light_widget, 1, 0)
         
-        # 土壤湿度
-        self.soil_widget = DashboardValueWidget("土壤湿度", "%")
-        metrics_layout.addWidget(self.soil_widget, 1, 1)
+        # 会议室占用率
+        self.occupancy_widget = DashboardValueWidget("会议室占用率", "%")
+        metrics_layout.addWidget(self.occupancy_widget, 1, 1)
         
         layout.addLayout(metrics_layout)
         
@@ -172,12 +174,12 @@ class DashboardWidget(QWidget):
         self.temp_status = StatusIndicator("温度状态")
         self.humidity_status = StatusIndicator("湿度状态")
         self.light_status = StatusIndicator("光照状态")
-        self.soil_status = StatusIndicator("土壤状态")
+        self.occupancy_status = StatusIndicator("会议室占用率状态")
         
         status_layout.addWidget(self.temp_status)
         status_layout.addWidget(self.humidity_status)
         status_layout.addWidget(self.light_status)
-        status_layout.addWidget(self.soil_status)
+        status_layout.addWidget(self.occupancy_status)
         
         layout.addLayout(status_layout)
         
@@ -212,14 +214,14 @@ class DashboardWidget(QWidget):
         light_progress_layout.addWidget(self.light_progress)
         progress_layout.addLayout(light_progress_layout)
         
-        # 土壤湿度进度条
-        soil_progress_layout = QHBoxLayout()
-        soil_progress_layout.addWidget(QLabel("土壤湿度:"))
-        self.soil_progress = QProgressBar()
-        self.soil_progress.setRange(0, 100)  # 0-100%
-        self.soil_progress.setValue(70)
-        soil_progress_layout.addWidget(self.soil_progress)
-        progress_layout.addLayout(soil_progress_layout)
+        # 会议室占用率进度条
+        occupancy_progress_layout = QHBoxLayout()
+        occupancy_progress_layout.addWidget(QLabel("会议室占用率:"))
+        self.occupancy_progress = QProgressBar()
+        self.occupancy_progress.setRange(0, 100)  # 0-100%
+        self.occupancy_progress.setValue(0)
+        occupancy_progress_layout.addWidget(self.occupancy_progress)
+        progress_layout.addLayout(occupancy_progress_layout)
         
         layout.addLayout(progress_layout)
         
@@ -256,19 +258,19 @@ class DashboardWidget(QWidget):
         self.temp_widget.update_value(env_data.temperature)
         self.humidity_widget.update_value(env_data.humidity)
         self.light_widget.update_value(env_data.light / 1000)  # 转换为k lux
-        self.soil_widget.update_value(env_data.soil_moisture)
+        self.occupancy_widget.update_value(env_data.occupancy * 100)  # 转换为百分比
         
         # 更新进度条
         self.temp_progress.setValue(int(env_data.temperature))
         self.humidity_progress.setValue(int(env_data.humidity))
         self.light_progress.setValue(int(env_data.light / 1000))  # 转换为k lux
-        self.soil_progress.setValue(int(env_data.soil_moisture))
+        self.occupancy_progress.setValue(int(env_data.occupancy * 100))
         
-        # 更新状态指示器（简单阈值判断）
-        self.temp_status.update_status(env_data.temperature < 10 or env_data.temperature > 35)
-        self.humidity_status.update_status(env_data.humidity < 40 or env_data.humidity > 80)
-        self.light_status.update_status(env_data.light / 1000 < 5 or env_data.light / 1000 > 50)
-        self.soil_status.update_status(env_data.soil_moisture < 30 or env_data.soil_moisture > 80)
+        # 更新状态指示器
+        self.temp_status.update_status(env_data.temperature < 18 or env_data.temperature > 28)  # 适宜温度范围
+        self.humidity_status.update_status(env_data.humidity < 30 or env_data.humidity > 70)  # 适宜湿度范围
+        self.light_status.update_status(env_data.light < 300 or env_data.light > 100000)  # 适宜光照范围
+        self.occupancy_status.update_status(env_data.occupancy < 0.1 or env_data.occupancy > 0.9)  # 会议室占用率异常
         
     def update_time_display(self):
         """

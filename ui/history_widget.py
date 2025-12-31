@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-历史数据界面组件
-显示环境监测的历史数据
+会议室环境历史数据界面组件
+显示会议室环境监测的历史数据
 """
 
 import sys
@@ -33,7 +33,7 @@ class HistoryWidget(QWidget):
         layout.setSpacing(10)
         
         # 标题
-        title_label = QLabel("环境监测历史数据")
+        title_label = QLabel("会议室环境监测历史数据")
         font = QFont()
         font.setPointSize(18)
         font.setBold(True)
@@ -55,8 +55,8 @@ class HistoryWidget(QWidget):
         history_layout.setContentsMargins(5, 5, 5, 5)
         
         self.history_table = QTableWidget()
-        self.history_table.setColumnCount(5)
-        self.history_table.setHorizontalHeaderLabels(["时间", "温度(°C)", "湿度(%)", "光照(lux)", "土壤湿度(%)"])
+        self.history_table.setColumnCount(6)
+        self.history_table.setHorizontalHeaderLabels(["时间", "温度(°C)", "湿度(%)", "光照(lux)", "二氧化碳(ppm)", "PM2.5(μg/m³)"])
         
         # 设置表格属性
         self.history_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
@@ -108,9 +108,13 @@ class HistoryWidget(QWidget):
             light_item = QTableWidgetItem(f"{data.light:.2f}")
             self.history_table.setItem(row, 3, light_item)
             
-            # 土壤湿度
-            soil_item = QTableWidgetItem(f"{data.soil_moisture:.2f}")
-            self.history_table.setItem(row, 4, soil_item)
+            # 二氧化碳
+            co2_item = QTableWidgetItem(f"{data.co2:.2f}")
+            self.history_table.setItem(row, 4, co2_item)
+            
+            # PM2.5
+            pm25_item = QTableWidgetItem(f"{data.pm25:.2f}")
+            self.history_table.setItem(row, 5, pm25_item)
             
         # 如果有数据，滚动到最后一行
         if history_data:

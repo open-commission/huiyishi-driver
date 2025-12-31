@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-生产溯源管理界面
-用于录入和查询生产记录
+会议室设备管理界面
+用于录入和查询会议室设备信息
 """
 
 import sys
@@ -19,7 +19,7 @@ from database.db_manager import DatabaseManager
 
 class ProductionWidget(QWidget):
     """
-    生产溯源管理界面
+    会议室设备管理界面
     """
     # 定义信号
     data_updated = pyqtSignal()
@@ -39,7 +39,7 @@ class ProductionWidget(QWidget):
         layout.setSpacing(15)
         
         # 标题
-        title_label = QLabel("秋月梨生产溯源管理系统")
+        title_label = QLabel("会议室设备管理系统")
         font = self.font()
         font.setPointSize(18)
         font.setBold(True)
@@ -48,35 +48,35 @@ class ProductionWidget(QWidget):
         layout.addWidget(title_label)
         
         # 创建输入区域
-        input_group = QGroupBox("录入生产记录")
+        input_group = QGroupBox("录入设备记录")
         input_layout = QFormLayout(input_group)
         
         # 二维码输入
         self.qr_code_input = QLineEdit()
-        self.qr_code_input.setPlaceholderText("请输入产品二维码")
+        self.qr_code_input.setPlaceholderText("请输入设备二维码")
         input_layout.addRow("二维码:", self.qr_code_input)
         
-        # 批次号输入
-        self.batch_id_input = QLineEdit()
-        self.batch_id_input.setPlaceholderText("请输入批次号")
-        input_layout.addRow("批次号:", self.batch_id_input)
+        # 设备ID输入
+        self.device_id_input = QLineEdit()
+        self.device_id_input.setPlaceholderText("请输入设备ID")
+        input_layout.addRow("设备ID:", self.device_id_input)
         
-        # 种植日期选择
-        self.planting_date_input = QDateEdit()
-        self.planting_date_input.setDate(QDate.currentDate())
-        self.planting_date_input.setCalendarPopup(True)
-        input_layout.addRow("种植日期:", self.planting_date_input)
+        # 安装日期选择
+        self.install_date_input = QDateEdit()
+        self.install_date_input.setDate(QDate.currentDate())
+        self.install_date_input.setCalendarPopup(True)
+        input_layout.addRow("安装日期:", self.install_date_input)
         
-        # 出厂日期选择
-        self.harvest_date_input = QDateEdit()
-        self.harvest_date_input.setDate(QDate.currentDate())
-        self.harvest_date_input.setCalendarPopup(True)
-        input_layout.addRow("出厂日期:", self.harvest_date_input)
+        # 维护日期选择
+        self.maintenance_date_input = QDateEdit()
+        self.maintenance_date_input.setDate(QDate.currentDate())
+        self.maintenance_date_input.setCalendarPopup(True)
+        input_layout.addRow("维护日期:", self.maintenance_date_input)
         
-        # 水果分级选择
-        self.grade_input = QComboBox()
-        self.grade_input.addItems(["特级", "一级", "二级", "三级"])
-        input_layout.addRow("水果分级:", self.grade_input)
+        # 设备类型选择
+        self.type_input = QComboBox()
+        self.type_input.addItems(["投影仪", "音响", "空调", "照明", "门禁"])
+        input_layout.addRow("设备类型:", self.type_input)
         
         # 备注输入
         self.notes_input = QTextEdit()
@@ -109,13 +109,13 @@ class ProductionWidget(QWidget):
         layout.addLayout(button_layout)
         
         # 创建表格显示区域
-        table_group = QGroupBox("生产记录列表")
+        table_group = QGroupBox("设备记录列表")
         table_layout = QVBoxLayout(table_group)
         
         self.record_table = QTableWidget()
         self.record_table.setColumnCount(7)
         self.record_table.setHorizontalHeaderLabels([
-            "二维码", "批次号", "种植日期", "出厂日期", "水果分级", "备注", "创建时间"
+            "二维码", "设备ID", "安装日期", "维护日期", "设备类型", "备注", "创建时间"
         ])
         
         # 设置表格属性
@@ -141,28 +141,28 @@ class ProductionWidget(QWidget):
         # 创建一些示例记录
         sample_records = [
             ProductionRecord(
-                batch_id="P20251001",
-                qr_code="QYLP20251001001",
-                planting_date=datetime(2025, 3, 15),
-                harvest_date=datetime(2025, 10, 10),
-                grade="特级",
-                notes="第一批秋月梨，品质优良"
+                device_id="D20251001",
+                qr_code="MTG20251001001",
+                install_date=datetime(2025, 3, 15),
+                maintenance_date=datetime(2025, 10, 10),
+                device_type="投影仪",
+                notes="会议室A投影仪，状态良好"
             ),
             ProductionRecord(
-                batch_id="P20251001",
-                qr_code="QYLP20251001002",
-                planting_date=datetime(2025, 3, 15),
-                harvest_date=datetime(2025, 10, 10),
-                grade="一级",
-                notes="第二批秋月梨"
+                device_id="D20251001",
+                qr_code="MTG20251001002",
+                install_date=datetime(2025, 3, 15),
+                maintenance_date=datetime(2025, 10, 10),
+                device_type="音响",
+                notes="会议室B音响系统"
             ),
             ProductionRecord(
-                batch_id="P20251002",
-                qr_code="QYLP20251002001",
-                planting_date=datetime(2025, 3, 20),
-                harvest_date=datetime(2025, 10, 15),
-                grade="特级",
-                notes="第三批秋月梨，糖分含量高"
+                device_id="D20251002",
+                qr_code="MTG20251002001",
+                install_date=datetime(2025, 3, 20),
+                maintenance_date=datetime(2025, 10, 15),
+                device_type="空调",
+                notes="会议室C空调，制冷效果佳"
             )
         ]
         
@@ -176,31 +176,31 @@ class ProductionWidget(QWidget):
         
     def save_record(self):
         """
-        保存生产记录
+        保存设备记录
         """
         # 获取表单数据
         qr_code = self.qr_code_input.text().strip()
-        batch_id = self.batch_id_input.text().strip()
+        device_id = self.device_id_input.text().strip()
         
-        if not qr_code or not batch_id:
-            QMessageBox.warning(self, "警告", "二维码和批次号不能为空！")
+        if not qr_code or not device_id:
+            QMessageBox.warning(self, "警告", "二维码和设备ID不能为空！")
             return
             
         # 获取日期数据
-        planting_date = self.planting_date_input.date().toPyDate()
-        harvest_date = self.harvest_date_input.date().toPyDate()
+        install_date = self.install_date_input.date().toPyDate()
+        maintenance_date = self.maintenance_date_input.date().toPyDate()
         
         # 获取其他数据
-        grade = self.grade_input.currentText()
+        device_type = self.type_input.currentText()
         notes = self.notes_input.toPlainText().strip()
         
-        # 创建生产记录对象
+        # 创建设备记录对象
         record = ProductionRecord(
-            batch_id=batch_id,
+            device_id=device_id,
             qr_code=qr_code,
-            planting_date=planting_date,
-            harvest_date=harvest_date,
-            grade=grade,
+            install_date=install_date,
+            maintenance_date=maintenance_date,
+            device_type=device_type,
             notes=notes
         )
         
@@ -209,7 +209,7 @@ class ProductionWidget(QWidget):
             self.database.save_production_record(record)
             
             # 显示成功消息
-            QMessageBox.information(self, "成功", "生产记录保存成功！")
+            QMessageBox.information(self, "成功", "设备记录保存成功！")
             
             # 清空表单
             self.clear_form()
@@ -224,7 +224,7 @@ class ProductionWidget(QWidget):
         
     def query_record(self):
         """
-        查询生产记录
+        查询设备记录
         """
         qr_code = self.qr_code_input.text().strip()
         
@@ -237,16 +237,16 @@ class ProductionWidget(QWidget):
         
         if record:
             # 填充表单
-            self.batch_id_input.setText(record.batch_id)
-            self.planting_date_input.setDate(record.planting_date)
+            self.device_id_input.setText(record.device_id)
+            self.install_date_input.setDate(record.install_date)
             
-            if record.harvest_date:
-                self.harvest_date_input.setDate(record.harvest_date)
+            if record.maintenance_date:
+                self.maintenance_date_input.setDate(record.maintenance_date)
                 
-            # 设置分级
-            grades = [self.grade_input.itemText(i) for i in range(self.grade_input.count())]
-            if record.grade in grades:
-                self.grade_input.setCurrentText(record.grade)
+            # 设置设备类型
+            types = [self.type_input.itemText(i) for i in range(self.type_input.count())]
+            if record.device_type in types:
+                self.type_input.setCurrentText(record.device_type)
                 
             self.notes_input.setPlainText(record.notes)
             
@@ -256,7 +256,7 @@ class ProductionWidget(QWidget):
             
     def delete_record(self):
         """
-        删除生产记录
+        删除设备记录
         """
         qr_code = self.qr_code_input.text().strip()
         
@@ -284,10 +284,10 @@ class ProductionWidget(QWidget):
         清空表单
         """
         self.qr_code_input.clear()
-        self.batch_id_input.clear()
-        self.planting_date_input.setDate(QDate.currentDate())
-        self.harvest_date_input.setDate(QDate.currentDate())
-        self.grade_input.setCurrentIndex(0)
+        self.device_id_input.clear()
+        self.install_date_input.setDate(QDate.currentDate())
+        self.maintenance_date_input.setDate(QDate.currentDate())
+        self.type_input.setCurrentIndex(0)
         self.notes_input.clear()
         self.current_record = None
         
@@ -306,16 +306,16 @@ class ProductionWidget(QWidget):
         
         for row, record in enumerate(records):
             self.record_table.setItem(row, 0, QTableWidgetItem(record.qr_code))
-            self.record_table.setItem(row, 1, QTableWidgetItem(record.batch_id))
+            self.record_table.setItem(row, 1, QTableWidgetItem(record.device_id))
             
-            # 格式化日期显示
-            planting_date_str = record.planting_date.strftime("%Y-%m-%d") if record.planting_date else ""
-            self.record_table.setItem(row, 2, QTableWidgetItem(planting_date_str))
+                # 格式化日期显示
+            install_date_str = record.install_date.strftime("%Y-%m-%d") if record.install_date else ""
+            self.record_table.setItem(row, 2, QTableWidgetItem(install_date_str))
             
-            harvest_date_str = record.harvest_date.strftime("%Y-%m-%d") if record.harvest_date else ""
-            self.record_table.setItem(row, 3, QTableWidgetItem(harvest_date_str))
+            maintenance_date_str = record.maintenance_date.strftime("%Y-%m-%d") if record.maintenance_date else ""
+            self.record_table.setItem(row, 3, QTableWidgetItem(maintenance_date_str))
             
-            self.record_table.setItem(row, 4, QTableWidgetItem(record.grade))
+            self.record_table.setItem(row, 4, QTableWidgetItem(record.device_type))
             self.record_table.setItem(row, 5, QTableWidgetItem(record.notes))
             
             created_at_str = record.created_at.strftime("%Y-%m-%d %H:%M") if record.created_at else ""
@@ -335,6 +335,46 @@ class ProductionWidget(QWidget):
             qr_code = qr_code_item.text()
             self.qr_code_input.setText(qr_code)
             self.query_record()
+
+    def load_sample_data(self):
+        """
+        加载示例数据
+        """
+        # 创建一些示例记录
+        sample_records = [
+            ProductionRecord(
+                device_id="D20251001",
+                qr_code="MTG20251001001",
+                install_date=datetime(2025, 3, 15),
+                maintenance_date=datetime(2025, 10, 10),
+                device_type="投影仪",
+                notes="会议室A投影仪，状态良好"
+            ),
+            ProductionRecord(
+                device_id="D20251001",
+                qr_code="MTG20251001002",
+                install_date=datetime(2025, 3, 15),
+                maintenance_date=datetime(2025, 10, 10),
+                device_type="音响",
+                notes="会议室B音响系统"
+            ),
+            ProductionRecord(
+                device_id="D20251002",
+                qr_code="MTG20251002001",
+                install_date=datetime(2025, 3, 20),
+                maintenance_date=datetime(2025, 10, 15),
+                device_type="空调",
+                notes="会议室C空调，制冷效果佳"
+            )
+        ]
+        
+        for record in sample_records:
+            try:
+                self.database.save_production_record(record)
+            except Exception as e:
+                print(f"保存示例数据时出错: {e}")
+            
+        self.refresh_table()
 
 
 if __name__ == "__main__":

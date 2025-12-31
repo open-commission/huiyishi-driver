@@ -77,7 +77,7 @@ class UARTSensorController(QObject):
             "temperature": 25.5,
             "humidity": 60.0,
             "light": 5000.0,
-            "soil_moisture": 70.0
+            "occupancy": 0.6
         }
         """
         if not self.serial_conn or not self.serial_conn.is_open:
@@ -97,14 +97,14 @@ class UARTSensorController(QObject):
                         temperature=float(data.get('temperature', 0.0)),
                         humidity=float(data.get('humidity', 0.0)),
                         light=float(data.get('light', 0.0)),
-                        soil_moisture=float(data.get('soil_moisture', 0.0))
+                        occupancy=float(data.get('occupancy', 0.0))
                     )
                     
                     # 发送信号通知UI更新
                     self.data_updated.emit(env_data)
                     print(f"UART传感器数据更新: {env_data.temperature}°C, "
                           f"{env_data.humidity}%, {env_data.light}lux, "
-                          f"{env_data.soil_moisture}%")
+                          f"{env_data.occupancy*100:.1f}%")
                     
         except json.JSONDecodeError as e:
             print(f"JSON解析错误: {e}")
@@ -140,7 +140,7 @@ if __name__ == "__main__":
             print(f"接收到数据: 温度={env_data.temperature}°C, "
                   f"湿度={env_data.humidity}%, "
                   f"光照={env_data.light}lux, "
-                  f"土壤湿度={env_data.soil_moisture}%")
+                  f"占用率={env_data.occupancy*100:.1f}%")
         
         def start(self):
             self.uart_controller.start_monitoring(1000)

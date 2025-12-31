@@ -28,7 +28,7 @@ class BarChartWidget(QWidget):
             'temperature': QColor(255, 50, 50),      # 红色
             'humidity': QColor(50, 150, 255),        # 蓝色
             'light': QColor(255, 200, 50),           # 黄色
-            'soil_moisture': QColor(50, 200, 50)     # 绿色
+            'occupancy': QColor(50, 200, 50)         # 绿色
         }
         
         # 图表参数
@@ -62,7 +62,7 @@ class BarChartWidget(QWidget):
         # 绘制图表
         self.draw_grid(painter)
         self.draw_axes(painter)
-        self.draw_bar_chart(painter)
+        self.draw_bars(painter)
         self.draw_legend(painter)
         
     def draw_no_data_message(self, painter):
@@ -82,26 +82,26 @@ class BarChartWidget(QWidget):
         
     def draw_grid(self, painter):
         """
-        绘制网格线
+        绘制网格
         
         Args:
             painter: QPainter对象
         """
         painter.save()
         
-        # 计算绘图区域
         width = self.width()
         height = self.height()
         chart_rect = QRectF(self.margin, self.margin, 
                            width - 2 * self.margin, 
                            height - 2 * self.margin)
         
-        # 绘制水平网格线 (10条)
-        pen = QPen(QColor(220, 220, 220))
-        pen.setWidth(1)
-        painter.setPen(pen)
-        
         grid_lines = 10
+        x_step = chart_rect.width() / grid_lines
+        for i in range(grid_lines + 1):
+            x = chart_rect.left() + i * x_step
+            painter.drawLine(int(x), int(chart_rect.top()), 
+                           int(x), int(chart_rect.bottom()))
+            
         y_step = chart_rect.height() / grid_lines
         for i in range(grid_lines + 1):
             y = chart_rect.bottom() - i * y_step
@@ -163,7 +163,7 @@ class BarChartWidget(QWidget):
             ('temperature', '温度'),
             ('humidity', '湿度'),
             ('light', '光照'),
-            ('soil_moisture', '土壤湿度')
+            ('occupancy', '占用率')
         ]
         
         # 计算柱状图参数，确保柱子和标签对齐
@@ -184,7 +184,7 @@ class BarChartWidget(QWidget):
                 
         painter.restore()
         
-    def draw_bar_chart(self, painter):
+    def draw_bars(self, painter):
         """
         绘制柱状图
         
@@ -202,12 +202,12 @@ class BarChartWidget(QWidget):
                            width - 2 * self.margin, 
                            height - 2 * self.margin)
         
-        # 数据类型
+        # 数据类型和标签
         data_types = [
             ('temperature', '温度', 40),      # 温度最大值40度
-            ('humidity', '湿度', 100),       # 湿度最大值100%
-            ('light', '光照', 100),          # 光照最大值100k lux (实际值除以1000)
-            ('soil_moisture', '土壤湿度', 100) # 土壤湿度最大值100%
+            ('humidity', '湿度', 100),        # 湿度最大值100%
+            ('light', '光照', 100),           # 光照最大值100klux（以10000lux为单位）
+            ('occupancy', '占用率', 1.0)      # 占用率最大值1.0
         ]
         
         # 计算柱状图参数，确保柱子和标签对齐
@@ -228,9 +228,9 @@ class BarChartWidget(QWidget):
             elif key == 'humidity':
                 value = self.current_data.humidity
             elif key == 'light':
-                value = self.current_data.light / 1000  # 转换为k lux
-            else:  # soil_moisture
-                value = self.current_data.soil_moisture
+                value = self.current_data.light / 1000  # 转换为klux
+            else:  # occupancy
+                value = self.current_data.occupancy
             
             # 设置画笔和画刷
             color = self.colors[key]
@@ -264,25 +264,20 @@ class BarChartWidget(QWidget):
         Args:
             painter: QPainter对象
         """
+        if not self.current_data:
+            return
+            
         painter.save()
         
-        # 图例位置
         legend_x = self.width() - 150
-        legend_y = self.margin + 20
-        legend_width = 130
-        legend_height = 80
+        legend_y = self.margin
         
-        # 绘制图例背景
-        painter.setBrush(QColor(255, 255, 255, 200))  # 半透明白色
-        painter.setPen(QColor(180, 180, 180))
-        painter.drawRect(legend_x, legend_y, legend_width, legend_height)
-        
-        # 绘制图例项
+        # 数据类型和标签
         data_types = [
             ('temperature', '温度'),
             ('humidity', '湿度'),
             ('light', '光照'),
-            ('soil_moisture', '土壤湿度')
+            ('occupancy', '占用率')
         ]
         
         font = QFont()
@@ -316,7 +311,7 @@ if __name__ == "__main__":
         temperature=random.uniform(20, 35),
         humidity=random.uniform(40, 80),
         light=random.uniform(2000, 10000),
-        soil_moisture=random.uniform(50, 90)
+        occupancy=random.uniform(0.3, 0.9)
     )
     data.timestamp = datetime.now()
     widget.update_data(data)

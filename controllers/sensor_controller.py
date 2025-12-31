@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-传感器控制器
-模拟传感器数据读取和处理
+会议室环境传感器控制器
+模拟会议室环境传感器数据读取和处理
 """
 
 import random
@@ -54,8 +54,10 @@ class SensorController(QObject):
             # 模拟传感器初始值
             self.temperature = 25.0
             self.humidity = 60.0
-            self.light = 5000.0
-            self.soil_moisture = 70.0
+            self.light = 500.0
+            self.co2 = 800.0
+            self.pm25 = 15.0
+            self.occupancy = 0.5  # 会议室占用率 50%
     
     def start_monitoring(self, interval_ms: int = 5000):
         """
@@ -89,21 +91,27 @@ class SensorController(QObject):
         # 模拟传感器数据波动
         self.temperature += random.uniform(-0.5, 0.5)
         self.humidity += random.uniform(-1.0, 1.0)
-        self.light += random.uniform(-100.0, 100.0)
-        self.soil_moisture += random.uniform(-2.0, 2.0)
+        self.light += random.uniform(-50.0, 50.0)
+        self.co2 += random.uniform(-50.0, 50.0)
+        self.pm25 += random.uniform(-5.0, 5.0)
+        self.occupancy += random.uniform(-0.05, 0.05)  # 占用率变化较小
         
         # 限制数据范围
-        self.temperature = max(0, min(40, self.temperature))
-        self.humidity = max(0, min(100, self.humidity))
-        self.light = max(0, min(100000, self.light))
-        self.soil_moisture = max(0, min(100, self.soil_moisture))
+        self.temperature = max(10, min(35, self.temperature))  # 会议室适宜温度范围
+        self.humidity = max(20, min(80, self.humidity))
+        self.light = max(0, min(2000, self.light))  # 会议室光照范围
+        self.co2 = max(400, min(2000, self.co2))  # CO2正常范围
+        self.pm25 = max(0, min(100, self.pm25))  # PM2.5范围
+        self.occupancy = max(0.0, min(1.0, self.occupancy))  # 会议室占用率 0-1
         
         # 创建环境数据对象
         env_data = EnvironmentData(
             temperature=round(self.temperature, 2),
             humidity=round(self.humidity, 2),
             light=round(self.light, 2),
-            soil_moisture=round(self.soil_moisture, 2)
+            co2=round(self.co2, 2),
+            pm25=round(self.pm25, 2),
+            occupancy=round(self.occupancy, 2)
         )
         
         # 保存到数据库
@@ -145,7 +153,9 @@ class SensorController(QObject):
                 temperature=self.temperature,
                 humidity=self.humidity,
                 light=self.light,
-                soil_moisture=self.soil_moisture
+                co2=self.co2,
+                pm25=self.pm25,
+                occupancy=self.occupancy
             )
     
     def get_history_data(self, limit: int = 100) -> list:
@@ -163,8 +173,8 @@ class SensorController(QObject):
 
 class ServoController(QObject):
     """
-    舵机控制器类
-    控制舵机开关状态
+    会议室舵机控制器类
+    控制会议室设备（如门锁、窗帘等）开关状态
     """
     # 定义信号，用于通知UI状态变化
     status_changed = pyqtSignal(bool)  # True表示开启，False表示关闭

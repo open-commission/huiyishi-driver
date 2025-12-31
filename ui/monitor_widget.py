@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-环境监测界面组件
-显示实时环境数据和可视化图表
+会议室环境监测界面组件
+显示实时会议室环境数据和可视化图表
 """
 
 import sys
@@ -71,7 +71,7 @@ class DataDisplayWidget(QFrame):
 
 class MonitorWidget(QWidget):
     """
-    环境监测主界面
+    会议室环境监测主界面
     """
     def __init__(self):
         super().__init__()
@@ -91,7 +91,7 @@ class MonitorWidget(QWidget):
         layout.setSpacing(10)
         
         # 标题
-        title_label = QLabel("秋月梨种植环境实时监测")
+        title_label = QLabel("会议室环境实时监测")
         font = QFont()
         font.setPointSize(18)
         font.setBold(True)
@@ -103,17 +103,20 @@ class MonitorWidget(QWidget):
         data_grid = QGridLayout()
         data_grid.setSpacing(10)
         
-        # 创建四个数据展示组件
+        # 创建会议室环境数据展示组件
         self.temp_widget = DataDisplayWidget("温度", "°C")
         self.humidity_widget = DataDisplayWidget("湿度", "%")
         self.light_widget = DataDisplayWidget("光照", "lux")
-        self.soil_widget = DataDisplayWidget("土壤湿度", "%")
+        self.co2_widget = DataDisplayWidget("二氧化碳", "ppm")
+        self.pm25_widget = DataDisplayWidget("PM2.5", "μg/m³")
         
-        # 添加到网格布局
+        # 添加到网格布局 (3x2网格)
         data_grid.addWidget(self.temp_widget, 0, 0)
         data_grid.addWidget(self.humidity_widget, 0, 1)
         data_grid.addWidget(self.light_widget, 1, 0)
-        data_grid.addWidget(self.soil_widget, 1, 1)
+        data_grid.addWidget(self.co2_widget, 1, 1)
+        data_grid.addWidget(self.pm25_widget, 2, 0)
+        # 留空位置 (2, 1) 以保持布局平衡
         
         layout.addLayout(data_grid)
         
@@ -157,7 +160,8 @@ class MonitorWidget(QWidget):
         self.temp_widget.update_value(env_data.temperature)
         self.humidity_widget.update_value(env_data.humidity)
         self.light_widget.update_value(env_data.light)
-        self.soil_widget.update_value(env_data.soil_moisture)
+        self.co2_widget.update_value(env_data.co2)
+        self.pm25_widget.update_value(env_data.pm25)
         
         # 更新折线图
         self.line_chart_widget.add_data_point(env_data)
