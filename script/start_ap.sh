@@ -1,0 +1,1 @@
+sudo nmcli device wifi hotspot ifname wlan0 ssid KickPi_AP password 12345678

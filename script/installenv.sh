@@ -41,7 +41,7 @@ pip install "PyQt6" "pyqt6-sip" -i $PIP_INDEX || \
 pip install --no-build-isolation "PyQt6" "pyqt6-sip" -i $PIP_INDEX
 
 # 安装常用 Python 库
-pip install "numpy>=1.20.0" "pyserial>=3.5" "evdev>=1.9.2" -i $PIP_INDEX
+pip install "numpy>=1.20.0" "pyserial>=3.5" "evdev>=1.9.2" "aiocoap>=0.4.17" -i $PIP_INDEX
 
 # ===============================
 # 完成
