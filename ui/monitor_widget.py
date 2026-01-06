@@ -6,15 +6,12 @@
 显示实时会议室环境数据和可视化图表
 """
 
-import sys
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, 
-                             QLabel, QFrame, QApplication, QPushButton, QTableWidget,
-                             QTableWidgetItem, QHeaderView, QGroupBox, QTabWidget, QSizePolicy)
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QFont, QColor
-from ui.chart_widget import ChartWidget
-from ui.bar_chart_widget import BarChartWidget
+from PyQt6.QtCore import Qt, QTimer, QRectF
+from PyQt6.QtGui import QFont, QColor, QPen
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame, QGroupBox, QSizePolicy)
+
 from models.environment_model import EnvironmentData
+from ui.chart_widget import ChartWidget
 
 
 class DataDisplayWidget(QFrame):
@@ -69,6 +66,250 @@ class DataDisplayWidget(QFrame):
         self.value_label.setText(f"{value:.2f}")
 
 
+class FieldChartWidget(ChartWidget):
+    """
+    现场从机折线图组件
+    显示温度、湿度、光照、二氧化碳、PM2.5
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        # 重新定义颜色以适应现场从机的参数
+        self.colors = {
+            'temperature': QColor(255, 50, 50),      # 红色 - 温度
+            'humidity': QColor(50, 150, 255),        # 蓝色 - 湿度
+            'light': QColor(255, 200, 50),           # 黄色 - 光照
+            'co2': QColor(50, 200, 50),              # 绿色 - 二氧化碳
+            'pm25': QColor(150, 50, 200)             # 紫色 - PM2.5
+        }
+        
+    def draw_data_lines(self, painter):
+        """
+        绘制现场从机数据线
+        
+        Args:
+            painter: QPainter对象
+        """
+        if len(self.data_history) < 2:
+            return
+            
+        painter.save()
+        
+        width = self.width()
+        height = self.height()
+        chart_rect = QRectF(self.margin, self.margin, 
+                           width - 2 * self.margin, 
+                           height - 2 * self.margin)
+        
+        # 数据范围
+        x_step = chart_rect.width() / (len(self.data_history) - 1) if len(self.data_history) > 1 else 0
+        
+        # 绘制现场从机数据的线条：温度、湿度、光照、二氧化碳、PM2.5
+        data_types = ['temperature', 'humidity', 'light', 'co2', 'pm25']
+        # 最大值范围
+        max_values = [40, 100, 100, 2000, 500]  # [温度, 湿度, 光照(klux), 二氧化碳, PM2.5]
+        
+        for idx, data_type in enumerate(data_types):
+            pen = QPen(list(self.colors.values())[idx])
+            pen.setWidth(2)
+            painter.setPen(pen)
+            
+            points = []
+            max_value = max_values[idx]
+            
+            for i, data_point in enumerate(self.data_history):
+                x = chart_rect.left() + i * x_step
+                
+                # 根据数据类型获取值
+                if data_type == 'temperature':
+                    value = data_point.temperature
+                elif data_type == 'humidity':
+                    value = data_point.humidity
+                elif data_type == 'light':
+                    # 光照数据需要特殊处理，转换为k lux
+                    value = data_point.light / 1000
+                elif data_type == 'co2':
+                    value = data_point.co2
+                else:  # pm25
+                    value = data_point.pm25
+                
+                # 计算Y坐标（注意坐标系Y轴向下为正）
+                y = chart_rect.bottom() - (value / max_value) * chart_rect.height()
+                points.append((x, y))
+                
+            # 绘制折线
+            for i in range(len(points) - 1):
+                p1 = points[i]
+                p2 = points[i + 1]
+                painter.drawLine(int(p1[0]), int(p1[1]), int(p2[0]), int(p2[1]))
+                
+        painter.restore()
+        
+    def draw_legend(self, painter):
+        """
+        绘制现场从机图例
+        
+        Args:
+            painter: QPainter对象
+        """
+        if not self.data_history:
+            return
+            
+        painter.save()
+        
+        legend_x = self.width() - 150
+        legend_y = self.margin
+
+        # 绘制图例背景
+        painter.setBrush(QColor(255, 255, 255, 200))  # 半透明白色
+        painter.setPen(QColor(180, 180, 180))
+        painter.drawRect(legend_x, legend_y, 130, 100)
+        
+        # 现场从机数据类型和标签
+        data_types = [
+            ('temperature', '温度'),
+            ('humidity', '湿度'),
+            ('light', '光照'),
+            ('co2', '二氧化碳'),
+            ('pm25', 'PM2.5')
+        ]
+        
+        font = QFont()
+        font.setPointSize(9)
+        painter.setFont(font)
+        
+        for i, (data_type, label) in enumerate(data_types):
+            y_pos = legend_y + 10 + i * 18
+            
+            # 绘制颜色标识
+            color = self.colors[data_type]
+            painter.setPen(QPen(color, 2))
+            painter.drawLine(legend_x + 10, y_pos + 5, legend_x + 30, y_pos + 5)
+            
+            # 绘制标签
+            painter.setPen(Qt.GlobalColor.black)
+            painter.drawText(legend_x + 35, y_pos, 80, 20, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, label)
+            
+        painter.restore()
+
+
+class MeetingChartWidget(ChartWidget):
+    """
+    会议室从机折线图组件
+    显示温度、湿度、光照
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        # 重新定义颜色以适应会议室从机的参数
+        self.colors = {
+            'temperature': QColor(255, 50, 50),      # 红色 - 温度
+            'humidity': QColor(50, 150, 255),        # 蓝色 - 湿度
+            'light': QColor(255, 200, 50)            # 黄色 - 光照
+        }
+        
+    def draw_data_lines(self, painter):
+        """
+        绘制会议室从机数据线
+        
+        Args:
+            painter: QPainter对象
+        """
+        if len(self.data_history) < 2:
+            return
+            
+        painter.save()
+        
+        width = self.width()
+        height = self.height()
+        chart_rect = QRectF(self.margin, self.margin, 
+                           width - 2 * self.margin, 
+                           height - 2 * self.margin)
+        
+        # 数据范围
+        x_step = chart_rect.width() / (len(self.data_history) - 1) if len(self.data_history) > 1 else 0
+        
+        # 绘制会议室从机数据的线条：温度、湿度、光照
+        data_types = ['temperature', 'humidity', 'light']
+        # 最大值范围
+        max_values = [40, 100, 100]  # [温度, 湿度, 光照(klux)]
+        
+        for idx, data_type in enumerate(data_types):
+            pen = QPen(list(self.colors.values())[idx])
+            pen.setWidth(2)
+            painter.setPen(pen)
+            
+            points = []
+            max_value = max_values[idx]
+            
+            for i, data_point in enumerate(self.data_history):
+                x = chart_rect.left() + i * x_step
+                
+                # 根据数据类型获取值
+                if data_type == 'temperature':
+                    value = data_point.temperature
+                elif data_type == 'humidity':
+                    value = data_point.humidity
+                else:  # light
+                    # 光照数据需要特殊处理，转换为k lux
+                    value = data_point.light / 1000
+                
+                # 计算Y坐标（注意坐标系Y轴向下为正）
+                y = chart_rect.bottom() - (value / max_value) * chart_rect.height()
+                points.append((x, y))
+                
+            # 绘制折线
+            for i in range(len(points) - 1):
+                p1 = points[i]
+                p2 = points[i + 1]
+                painter.drawLine(int(p1[0]), int(p1[1]), int(p2[0]), int(p2[1]))
+                
+        painter.restore()
+        
+    def draw_legend(self, painter):
+        """
+        绘制会议室从机图例
+        
+        Args:
+            painter: QPainter对象
+        """
+        if not self.data_history:
+            return
+            
+        painter.save()
+        
+        legend_x = self.width() - 150
+        legend_y = self.margin
+
+        # 绘制图例背景
+        painter.setBrush(QColor(255, 255, 255, 200))  # 半透明白色
+        painter.setPen(QColor(180, 180, 180))
+        painter.drawRect(legend_x, legend_y, 130, 60)
+        
+        # 会议室从机数据类型和标签
+        data_types = [
+            ('temperature', '温度'),
+            ('humidity', '湿度'),
+            ('light', '光照')
+        ]
+        
+        font = QFont()
+        font.setPointSize(9)
+        painter.setFont(font)
+        
+        for i, (data_type, label) in enumerate(data_types):
+            y_pos = legend_y + 10 + i * 18
+            
+            # 绘制颜色标识
+            color = self.colors[data_type]
+            painter.setPen(QPen(color, 2))
+            painter.drawLine(legend_x + 10, y_pos + 5, legend_x + 30, y_pos + 5)
+            
+            # 绘制标签
+            painter.setPen(Qt.GlobalColor.black)
+            painter.drawText(legend_x + 35, y_pos, 80, 20, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, label)
+            
+        painter.restore()
+
+
 class MonitorWidget(QWidget):
     """
     会议室环境监测主界面
@@ -91,7 +332,7 @@ class MonitorWidget(QWidget):
         layout.setSpacing(10)
         
         # 标题
-        title_label = QLabel("会议室环境实时监测")
+        title_label = QLabel("环境监测 - 现场从机与会议室从机对比")
         font = QFont()
         font.setPointSize(18)
         font.setBold(True)
@@ -99,44 +340,35 @@ class MonitorWidget(QWidget):
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title_label)
         
-        # 创建网格布局用于放置数据展示组件
-        data_grid = QGridLayout()
-        data_grid.setSpacing(10)
+        # 创建上下两个图表区域
+        charts_layout = QVBoxLayout()
+        charts_layout.setSpacing(10)
         
-        # 创建会议室环境数据展示组件
-        self.temp_widget = DataDisplayWidget("温度", "°C")
-        self.humidity_widget = DataDisplayWidget("湿度", "%")
-        self.light_widget = DataDisplayWidget("光照", "lux")
-        self.co2_widget = DataDisplayWidget("二氧化碳", "ppm")
-        self.pm25_widget = DataDisplayWidget("PM2.5", "μg/m³")
+        # 上半部分：现场从机折线图
+        field_group = QGroupBox("现场从机")
+        field_layout = QVBoxLayout(field_group)
         
-        # 添加到网格布局 (3x2网格)
-        data_grid.addWidget(self.temp_widget, 0, 0)
-        data_grid.addWidget(self.humidity_widget, 0, 1)
-        data_grid.addWidget(self.light_widget, 1, 0)
-        data_grid.addWidget(self.co2_widget, 1, 1)
-        data_grid.addWidget(self.pm25_widget, 2, 0)
-        # 留空位置 (2, 1) 以保持布局平衡
+        # 现场从机折线图 - 显示温度、湿度、光照、二氧化碳、PM2.5
+        self.field_chart_widget = FieldChartWidget()
+        field_layout.addWidget(self.field_chart_widget)
         
-        layout.addLayout(data_grid)
+        charts_layout.addWidget(field_group)
         
-        # 创建图表标签页
-        self.chart_tabs = QTabWidget()
+        # 下半部分：会议室从机折线图
+        meeting_group = QGroupBox("会议室从机")
+        meeting_layout = QVBoxLayout(meeting_group)
         
-        # 创建折线图组件（用于查看历史变化）
-        self.line_chart_widget = ChartWidget()
-        self.chart_tabs.addTab(self.line_chart_widget, "历史变化趋势")
+        # 会议室从机折线图 - 显示温度、湿度、光照
+        self.meeting_chart_widget = MeetingChartWidget()
+        meeting_layout.addWidget(self.meeting_chart_widget)
         
-        # 创建柱状图组件（用于查看最新状态）
-        self.bar_chart_widget = BarChartWidget()
-        self.chart_tabs.addTab(self.bar_chart_widget, "当前状态")
+        charts_layout.addWidget(meeting_group)
         
-        layout.addWidget(self.chart_tabs)
+        layout.addLayout(charts_layout)
         
-        # 设置初始大小比例
-        layout.setStretch(0, 0)  # 标题
-        layout.setStretch(1, 1)  # 数据网格
-        layout.setStretch(2, 3)  # 图表标签页
+        # 设置图表区域的比例
+        charts_layout.setStretch(0, 1)  # 现场从机图表
+        charts_layout.setStretch(1, 1)  # 会议室从机图表
         
         # 添加伸缩因子以填满窗口
         layout.addStretch(1)
@@ -156,18 +388,9 @@ class MonitorWidget(QWidget):
         Args:
             env_data: EnvironmentData对象
         """
-        # 更新数值显示
-        self.temp_widget.update_value(env_data.temperature)
-        self.humidity_widget.update_value(env_data.humidity)
-        self.light_widget.update_value(env_data.light)
-        self.co2_widget.update_value(env_data.co2)
-        self.pm25_widget.update_value(env_data.pm25)
-        
-        # 更新折线图
-        self.line_chart_widget.add_data_point(env_data)
-        
-        # 更新柱状图（显示最新状态）
-        self.bar_chart_widget.update_data(env_data)
+        # 同时更新两个图表的数据
+        self.field_chart_widget.add_data_point(env_data)
+        self.meeting_chart_widget.add_data_point(env_data)
         
     def load_history_data(self):
         """

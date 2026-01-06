@@ -6,23 +6,24 @@
 包含会议室环境监测、会议室控制和管理界面三个主要部分
 """
 
+from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QVBoxLayout, QWidget,
-                             QApplication, QStatusBar, QLabel, QSizePolicy)
-from PyQt6.QtCore import Qt, QSize
-from ui.dashboard_widget import DashboardWidget, MeetingRoomDashboard, FieldDeviceDashboard
-from ui.monitor_widget import MonitorWidget
-from ui.history_widget import HistoryWidget
-from ui.alarm_widget import AlarmWidget
-from ui.planting_record_widget import PlantingRecordWidget  # 会议室记录
-from ui.ventilation_widget import VentilationWidget
-from ui.watering_widget import WateringWidget
-from ui.alarm_config_widget import AlarmConfigWidget
+                             QStatusBar, QLabel, QSizePolicy)
+
 from controllers.sensor_controller import SensorController, ServoController
 from database.db_manager import DatabaseManager
 from hardware.gpio_controller import GPIOController
 from hardware.ir_controller import IRController
 from models.environment_model import EnvironmentData
 from remote_config import PAGE_MAPPING
+from ui.alarm_config_widget import AlarmConfigWidget
+from ui.alarm_widget import AlarmWidget
+from ui.dashboard_widget import MeetingRoomDashboard, FieldDeviceDashboard
+from ui.history_widget import HistoryWidget
+from ui.monitor_widget import MonitorWidget
+from ui.planting_record_widget import PlantingRecordWidget  # 会议室记录
+from ui.ventilation_widget import VentilationWidget
+from ui.watering_widget import WateringWidget
 
 
 class MainWindow(QMainWindow):
