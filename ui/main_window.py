@@ -9,7 +9,7 @@
 from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QVBoxLayout, QWidget,
                              QApplication, QStatusBar, QLabel, QSizePolicy)
 from PyQt6.QtCore import Qt, QSize
-from ui.dashboard_widget import DashboardWidget
+from ui.dashboard_widget import DashboardWidget, MeetingRoomDashboard, FieldDeviceDashboard
 from ui.monitor_widget import MonitorWidget
 from ui.history_widget import HistoryWidget
 from ui.alarm_widget import AlarmWidget
@@ -81,7 +81,8 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.tab_widget)
 
         # 创建各个功能页面
-        self.dashboard_widget = DashboardWidget()  # 主仪表盘
+        self.meeting_room_widget = MeetingRoomDashboard()  # 会议室从机
+        self.field_device_widget = FieldDeviceDashboard()  # 现场从机
         self.monitor_widget = MonitorWidget()  # 会议室环境监测（不含历史数据）
         self.history_widget = HistoryWidget()  # 历史数据（从环境监测拆分）
         self.meeting_record_widget = PlantingRecordWidget()  # 会议室记录
@@ -91,7 +92,8 @@ class MainWindow(QMainWindow):
         self.alarm_widget = AlarmWidget()  # 报警监控
 
         # 设置所有页面的尺寸策略为扩张填充
-        self.dashboard_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.meeting_room_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.field_device_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.monitor_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.history_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.meeting_record_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -101,7 +103,8 @@ class MainWindow(QMainWindow):
         self.alarm_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # 添加页面到标签页控件（只保留不需要输入的界面）
-        self.tab_widget.addTab(self.dashboard_widget, "主仪表盘")
+        self.tab_widget.addTab(self.meeting_room_widget, "会议室从机")
+        self.tab_widget.addTab(self.field_device_widget, "现场从机")
         self.tab_widget.addTab(self.monitor_widget, "会议室环境")
         self.tab_widget.addTab(self.history_widget, "历史数据")
         self.tab_widget.addTab(self.meeting_record_widget, "会议室记录")
@@ -146,10 +149,18 @@ class MainWindow(QMainWindow):
                                   f"PM2.5 {env_data.pm25}μg/m³, "
                                   f"占用率 {env_data.occupancy*100:.1f}%")
 
-        # 安全更新仪表盘数据
+        # 安全更新会议室从机仪表盘数据
         try:
-            if self.dashboard_widget:
-                self.dashboard_widget.on_sensor_data_updated(env_data)
+            if self.meeting_room_widget:
+                self.meeting_room_widget.on_sensor_data_updated(env_data)
+        except RuntimeError:
+            # 组件可能已被删除，忽略错误
+            pass
+
+        # 安全更新现场从机仪表盘数据
+        try:
+            if self.field_device_widget:
+                self.field_device_widget.on_sensor_data_updated(env_data)
         except RuntimeError:
             # 组件可能已被删除，忽略错误
             pass
