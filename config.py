@@ -25,7 +25,7 @@ class Config:
         self.uart_baudrate = int(os.getenv('UART_BAUDRATE', '9600'))  # 默认波特率
         
         # GPIO引脚配置 (适用于全志H618平台)
-        self.button_pins = [12, 13]  # PG12和PG13用于按钮控制
+        self.button_pins = [12, 13]  # GPIOB12和GPIOB13用于按钮控制
         self.led_pins = [16, 17, 18, 19]  # PG16,PG17,PG18,PG19用于LED指示灯
         
         # 数据采集配置

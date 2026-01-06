@@ -58,6 +58,8 @@ class SensorController(QObject):
             self.co2 = 800.0
             self.pm25 = 15.0
             self.occupancy = 0.5  # 会议室占用率 50%
+            self.motor_status = False  # 现场从机电机状态
+            self.servo_status = False  # 会议室从机舵机状态
     
     def start_monitoring(self, interval_ms: int = 5000):
         """
@@ -111,7 +113,9 @@ class SensorController(QObject):
             light=round(self.light, 2),
             co2=round(self.co2, 2),
             pm25=round(self.pm25, 2),
-            occupancy=round(self.occupancy, 2)
+            occupancy=round(self.occupancy, 2),
+            motor_status=self.motor_status,
+            servo_status=self.servo_status
         )
         
         # 保存到数据库
@@ -155,7 +159,9 @@ class SensorController(QObject):
                 light=self.light,
                 co2=self.co2,
                 pm25=self.pm25,
-                occupancy=self.occupancy
+                occupancy=self.occupancy,
+                motor_status=self.motor_status,
+                servo_status=self.servo_status
             )
     
     def get_history_data(self, limit: int = 100) -> list:

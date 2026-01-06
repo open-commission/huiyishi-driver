@@ -16,7 +16,7 @@ class EnvironmentData:
     """
     def __init__(self, temperature: float = 0.0, humidity: float = 0.0, 
                  light: float = 0.0, co2: float = 0.0, pm25: float = 0.0,
-                 occupancy: float = 0.0):
+                 occupancy: float = 0.0, motor_status: bool = False, servo_status: bool = False):
         """
         初始化会议室环境数据
         
@@ -27,6 +27,8 @@ class EnvironmentData:
             co2: 二氧化碳浓度 (ppm)
             pm25: PM2.5浓度 (μg/m³)
             occupancy: 会议室占用率 (0.0-1.0)
+            motor_status: 电机状态 (现场从机)
+            servo_status: 舵机状态 (会议室从机)
         """
         self.timestamp = datetime.now()
         self.temperature = temperature
@@ -35,6 +37,8 @@ class EnvironmentData:
         self.co2 = co2
         self.pm25 = pm25
         self.occupancy = occupancy
+        self.motor_status = motor_status  # 现场从机电机状态
+        self.servo_status = servo_status  # 会议室从机舵机状态
     
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -50,7 +54,9 @@ class EnvironmentData:
             'light': self.light,
             'co2': self.co2,
             'pm25': self.pm25,
-            'occupancy': self.occupancy
+            'occupancy': self.occupancy,
+            'motor_status': self.motor_status,
+            'servo_status': self.servo_status
         }
     
     @classmethod
@@ -70,7 +76,9 @@ class EnvironmentData:
             light=data.get('light', 0.0),
             co2=data.get('co2', 0.0),
             pm25=data.get('pm25', 0.0),
-            occupancy=data.get('occupancy', 0.0)
+            occupancy=data.get('occupancy', 0.0),
+            motor_status=data.get('motor_status', False),
+            servo_status=data.get('servo_status', False)
         )
         if 'timestamp' in data:
             env_data.timestamp = datetime.fromisoformat(data['timestamp'])

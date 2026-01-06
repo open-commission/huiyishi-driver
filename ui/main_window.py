@@ -22,6 +22,7 @@ from database.db_manager import DatabaseManager
 from hardware.gpio_controller import GPIOController
 from hardware.ir_controller import IRController
 from models.environment_model import EnvironmentData
+from remote_config import PAGE_MAPPING
 
 
 class MainWindow(QMainWindow):
@@ -54,6 +55,7 @@ class MainWindow(QMainWindow):
 
         # 启动红外事件监听
         self.ir_controller.ir_event_logged.connect(self.on_ir_event_logged)
+        self.ir_controller.ir_key_pressed.connect(self.on_ir_key_pressed)
         self.ir_controller.start_ir_monitoring()
 
     def init_ui(self):
@@ -231,6 +233,50 @@ class MainWindow(QMainWindow):
         print(log_msg)  # 在控制台输出红外事件
         # 可以根据需要添加到状态栏或其他UI组件
         self.status_label.setText(f"红外事件: {log_msg[-50:]}..." if len(log_msg) > 50 else f"红外事件: {log_msg}")
+
+    def on_ir_key_pressed(self, keycode):
+        """
+        处理红外按键按下事件
+        
+        Args:
+            keycode: 按键码
+        """
+        print(f"红外按键按下: {keycode}")
+        # 根据按键码切换到对应的页面
+        
+        if keycode in PAGE_MAPPING:
+            page_name = PAGE_MAPPING[keycode]
+            # 根据页面名称找到对应的标签页索引并切换
+            for i in range(self.tab_widget.count()):
+                if self.tab_widget.tabText(i) == self.get_tab_text_by_page_name(page_name):
+                    self.tab_widget.setCurrentIndex(i)
+                    self.status_label.setText(f"切换到: {self.tab_widget.tabText(i)}")
+                    break
+
+    def get_tab_text_by_page_name(self, page_name):
+        """
+        根据页面名称获取标签页文本
+        
+        Args:
+            page_name: 页面名称
+            
+        Returns:
+            str: 标签页文本
+        """
+        page_name_mapping = {
+            'meeting_dashboard': '主仪表盘',
+            'meeting_monitor': '会议室环境',
+            'meeting_history': '历史数据',
+            'meeting_control': '会议室控制',
+            'field_dashboard': '主仪表盘',
+            'field_monitor': '会议室环境',
+            'field_history': '历史数据',
+            'device_control': '设备控制',
+            'alarm_config': '报警配置',
+            'alarm_monitor': '报警监控',
+            'main_dashboard': '主仪表盘',
+        }
+        return page_name_mapping.get(page_name, '主仪表盘')
 
     def closeEvent(self, event):
         """
