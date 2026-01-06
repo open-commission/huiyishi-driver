@@ -6,12 +6,15 @@
 显示实时会议室环境数据和可视化图表
 """
 
-from PyQt6.QtCore import Qt, QTimer, QRectF
-from PyQt6.QtGui import QFont, QColor, QPen
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame, QGroupBox, QSizePolicy)
-
-from models.environment_model import EnvironmentData
+import sys
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, 
+                             QLabel, QFrame, QApplication, QPushButton, QTableWidget,
+                             QTableWidgetItem, QHeaderView, QGroupBox, QTabWidget, QSizePolicy)
+from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QFont, QColor, QPen, QPainter, QBrush
+from PyQt6.QtCore import QRectF  # QRectF 位于 QtCore 模块中
 from ui.chart_widget import ChartWidget
+from models.environment_model import EnvironmentData
 
 
 class DataDisplayWidget(QFrame):
